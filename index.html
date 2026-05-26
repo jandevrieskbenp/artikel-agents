@@ -723,11 +723,11 @@ const SB = {
     return localStorage.getItem('iv_dag_blacklist_' + site) || '';
   },
 
-  // ── API instellingen (zonder API key!) ──
-  async saveApiInstellingen(provider, model, workerUrl) {
+  // ── API instellingen (inclusief api key) ──
+  async saveApiInstellingen(provider, model, workerUrl, apiKey) {
     if (this.ok) {
       const { error } = await this._client.from('api_instellingen')
-        .upsert({ id: 'global', provider, model, worker_url: workerUrl }, { onConflict: 'id' });
+        .upsert({ id: 'global', provider, model, worker_url: workerUrl, api_key: apiKey }, { onConflict: 'id' });
       if (error) console.error('SB saveApiInstellingen:', error);
     }
   },
@@ -769,12 +769,13 @@ async function initSupabase() {
   const ok = SB.init(url, key);
   if (ok) {
     updateSbStatusPill('verbonden');
-    // Sync API instellingen vanuit DB (behalve key)
+    // Sync provider/model/workerUrl vanuit DB (nooit de API key)
     const apiDb = await SB.getApiInstellingen();
     if (apiDb) {
-      if (!localStorage.getItem('iv_provider'))    localStorage.setItem('iv_provider',   apiDb.provider);
-      if (!localStorage.getItem('iv_worker_url'))  localStorage.setItem('iv_worker_url', apiDb.worker_url);
-      if (!localStorage.getItem('iv_model'))       localStorage.setItem('iv_model',      apiDb.model);
+      if (apiDb.provider)    localStorage.setItem('iv_provider',   apiDb.provider);
+      if (apiDb.worker_url)  localStorage.setItem('iv_worker_url', apiDb.worker_url);
+      if (apiDb.model)       localStorage.setItem('iv_model',      apiDb.model);
+      if (apiDb.api_key)     localStorage.setItem('iv_api_key',    apiDb.api_key);
     }
   }
 }
@@ -1069,6 +1070,10 @@ async function init(){
   // Init Supabase first, then load data
   await initSupabase();
 
+  // Herlaad API instellingen UI na Supabase sync
+  // (provider/model/workerUrl kunnen nu vanuit DB zijn ingevuld)
+  loadApiSettingsUI();
+
   // Load SB credentials into UI
   const sbUrl = document.getElementById('sb-url-input');
   const sbKey = document.getElementById('sb-key-input');
@@ -1343,6 +1348,8 @@ function saveApiSettings() {
   localStorage.setItem('iv_api_key',    apiKey);
   localStorage.setItem('iv_worker_url', workerUrl);
   localStorage.setItem('iv_model',      model);
+  // Sla alles op in Supabase inclusief api key
+  SB.saveApiInstellingen(provider, model, workerUrl, apiKey);
   const ok = document.getElementById('api-settings-ok');
   ok.style.display='inline'; setTimeout(()=>ok.style.display='none', 2000);
   updateModelOptions();
