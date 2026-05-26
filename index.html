@@ -476,6 +476,67 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
   <!-- CONFIG -->
   <div class="panel" id="panel-config">
     <div class="chint">💡 Pas elke agent aan per website. Wijzigingen worden direct opgeslagen.</div>
+
+    <!-- API INSTELLINGEN -->
+    <div class="cfg-card">
+      <div class="cchead">
+        <span style="font-size:20px">🔑</span>
+        <div>
+          <div style="font-weight:500;font-size:14px">API Instellingen</div>
+          <div style="font-size:11px;color:var(--mut)">Provider, model, API key en Worker URL</div>
+        </div>
+        <div id="api-status-pill" style="margin-left:auto;font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--bdr);background:var(--sand);color:var(--mut)">Niet geconfigureerd</div>
+      </div>
+      <div class="ccbody">
+
+        <!-- Provider selector -->
+        <div>
+          <div class="flbl">AI Provider</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+            <label id="prov-anthropic" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--rmd);cursor:pointer;background:var(--sand);transition:all .15s">
+              <input type="radio" name="provider" id="api-provider" value="anthropic" style="display:none">
+              <div style="width:28px;height:28px;border-radius:6px;background:#1c1c1a;display:flex;align-items:center;justify-content:center;font-size:14px">🤖</div>
+              <div><div style="font-size:13px;font-weight:500">Anthropic</div><div style="font-size:10px;color:var(--mut)">Claude Sonnet / Opus</div></div>
+            </label>
+            <label id="prov-google" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--rmd);cursor:pointer;background:var(--sand);transition:all .15s">
+              <input type="radio" name="provider" id="api-provider-g" value="google" style="display:none">
+              <div style="width:28px;height:28px;border-radius:6px;background:#4285f4;display:flex;align-items:center;justify-content:center;font-size:14px">G</div>
+              <div><div style="font-size:13px;font-weight:500">Google</div><div style="font-size:10px;color:var(--mut)">Gemini Flash / Pro</div></div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Model -->
+        <div>
+          <div class="flbl">Model</div>
+          <select class="finp" id="api-model" style="cursor:pointer"></select>
+        </div>
+
+        <!-- API Key -->
+        <div>
+          <div class="flbl" id="api-key-label">API Key</div>
+          <div style="display:flex;gap:6px">
+            <input class="finp" id="api-key-input" type="password" placeholder="sk-ant-... of AIza..." style="flex:1;font-family:monospace;font-size:12px">
+            <button onclick="toggleKeyVis()" style="padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--rmd);background:var(--sand);cursor:pointer;font-size:13px" title="Toon/verberg key">👁</button>
+          </div>
+          <div id="api-key-hint" style="font-size:11px;color:var(--mut);margin-top:4px"></div>
+        </div>
+
+        <!-- Worker URL -->
+        <div>
+          <div class="flbl">Cloudflare Worker URL</div>
+          <input class="finp" id="api-worker-url" placeholder="https://anthropic-proxy.jouwaccount.workers.dev" style="font-size:12px">
+          <div style="font-size:11px;color:var(--mut);margin-top:4px">Gevonden in Cloudflare → Workers → jouw worker → URL bovenaan</div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="saveb" onclick="saveApiSettings()">Opslaan</button>
+          <button class="saveb" style="background:var(--sand);color:var(--dark);border:1px solid var(--bdr)" onclick="testApiConnection()">Verbinding testen</button>
+          <span class="saok" id="api-settings-ok">✓ Opgeslagen!</span>
+          <span id="api-test-result" style="font-size:12px;display:none"></span>
+        </div>
+      </div>
+    </div>
     <div class="cfg-card" style="margin-bottom:0">
       <div class="cchead">
         <span style="font-size:20px" id="cfg-site-icon">🌐</span>
@@ -768,8 +829,20 @@ function init(){
   }
   renderSidebar(); renderFlow(); renderConfig(); setupTabs(); setupTone(); setupStars();
   loadSiteConfigUI();
+  loadApiSettingsUI();
   initDagelijks();
-  startIntake();
+
+  // Warn if API not configured
+  const s = getApiSettings();
+  if (!s.apiKey || !s.workerUrl) {
+    setTimeout(() => {
+      switchTab('config');
+      document.getElementById('cfg-site-ok'); // scroll to top
+      window.scrollTo(0,0);
+    }, 800);
+  } else {
+    startIntake();
+  }
 }
 
 // ═══════════ SIDEBAR ═══════════
@@ -997,16 +1070,187 @@ async function launchAgents(extraInstructions){
   document.getElementById('rdy-btn').disabled=false;
 }
 
-// ═══════════ API ═══════════
+// ═══════════ API INSTELLINGEN ═══════════
+const MODELS = {
+  anthropic: [
+    { id: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4 (snel, aanbevolen)' },
+    { id: 'claude-opus-4-5',          label: 'Claude Opus 4 (langzamer, slimmer)' },
+    { id: 'claude-haiku-4-5-20251001',label: 'Claude Haiku 4 (goedkoopst)' },
+  ],
+  google: [
+    { id: 'gemini-1.5-flash',   label: 'Gemini 1.5 Flash (snel, goedkoop)' },
+    { id: 'gemini-1.5-pro',     label: 'Gemini 1.5 Pro (slimmer)' },
+    { id: 'gemini-2.0-flash',   label: 'Gemini 2.0 Flash (nieuwste)' },
+  ]
+};
+
+function getApiSettings() {
+  return {
+    provider:   localStorage.getItem('iv_provider')   || 'anthropic',
+    apiKey:     localStorage.getItem('iv_api_key')    || '',
+    workerUrl:  localStorage.getItem('iv_worker_url') || '',
+    model:      localStorage.getItem('iv_model')      || 'claude-sonnet-4-20250514',
+  };
+}
+
+function saveApiSettings() {
+  const provider  = document.getElementById('api-provider').value;
+  const apiKey    = document.getElementById('api-key-input').value.trim();
+  const workerUrl = document.getElementById('api-worker-url').value.trim();
+  const model     = document.getElementById('api-model').value;
+  localStorage.setItem('iv_provider',   provider);
+  localStorage.setItem('iv_api_key',    apiKey);
+  localStorage.setItem('iv_worker_url', workerUrl);
+  localStorage.setItem('iv_model',      model);
+  const ok = document.getElementById('api-settings-ok');
+  ok.style.display='inline'; setTimeout(()=>ok.style.display='none', 2000);
+  updateModelOptions();
+  updateApiStatusPill();
+  // Start intake if chat is still empty
+  if (document.getElementById('ichat').children.length === 0) {
+    switchTab('intake');
+    startIntake();
+  }
+}
+
+function updateModelOptions() {
+  const provider = document.getElementById('api-provider')?.value || getApiSettings().provider;
+  const sel = document.getElementById('api-model');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = MODELS[provider].map(m =>
+    `<option value="${m.id}" ${m.id===current?'selected':''}>${m.label}</option>`
+  ).join('');
+}
+
+function loadApiSettingsUI() {
+  const s = getApiSettings();
+
+  // Set radio buttons via visual labels
+  setProviderUI(s.provider);
+
+  // Wire up radio-style label clicks
+  document.getElementById('prov-anthropic').addEventListener('click', () => setProviderUI('anthropic'));
+  document.getElementById('prov-google').addEventListener('click',    () => setProviderUI('google'));
+
+  const keyEl = document.getElementById('api-key-input');
+  const wrkEl = document.getElementById('api-worker-url');
+  if (keyEl) keyEl.value = s.apiKey;
+  if (wrkEl) wrkEl.value = s.workerUrl;
+  updateModelOptions();
+  const sel = document.getElementById('api-model');
+  if (sel) sel.value = s.model;
+  updateApiStatusPill();
+}
+
+let _currentProvider = 'anthropic';
+function setProviderUI(p) {
+  _currentProvider = p;
+  // Visual state
+  document.getElementById('prov-anthropic').style.borderColor = p==='anthropic' ? 'var(--g)' : 'var(--bdr)';
+  document.getElementById('prov-anthropic').style.background  = p==='anthropic' ? 'var(--gl)' : 'var(--sand)';
+  document.getElementById('prov-google').style.borderColor    = p==='google'    ? '#4285f4'   : 'var(--bdr)';
+  document.getElementById('prov-google').style.background     = p==='google'    ? '#e8f0fe'   : 'var(--sand)';
+  // Hidden input for reading
+  document.getElementById('api-provider').value = p;
+  // Key hint
+  const hint = document.getElementById('api-key-hint');
+  if (p === 'anthropic') {
+    hint.innerHTML = 'Haal je key op via <a href="https://console.anthropic.com/keys" target="_blank" style="color:var(--g)">console.anthropic.com/keys</a>';
+  } else {
+    hint.innerHTML = 'Haal je key op via <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#4285f4">aistudio.google.com/app/apikey</a> — gratis tier beschikbaar';
+  }
+  updateModelOptions();
+}
+
+function updateApiStatusPill() {
+  const s = getApiSettings();
+  const pill = document.getElementById('api-status-pill');
+  if (!pill) return;
+  if (s.apiKey && s.workerUrl) {
+    const provLabel = s.provider === 'google' ? 'Google Gemini' : 'Anthropic Claude';
+    pill.textContent = `✓ ${provLabel}`;
+    pill.style.background = s.provider === 'google' ? '#e8f0fe' : 'var(--gl)';
+    pill.style.color = s.provider === 'google' ? '#1a4b9e' : 'var(--g)';
+    pill.style.borderColor = s.provider === 'google' ? '#b8cef4' : '#b8deca';
+  } else {
+    pill.textContent = '⚠ Niet geconfigureerd';
+    pill.style.background = '#fff8ec';
+    pill.style.color = '#b86a10';
+    pill.style.borderColor = '#e8c07a';
+  }
+}
+
+function toggleKeyVis() {
+  const inp = document.getElementById('api-key-input');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+async function testApiConnection() {
+  const result = document.getElementById('api-test-result');
+  result.style.display = 'inline';
+  result.style.color = 'var(--mut)';
+  result.textContent = '⏳ Verbinding testen...';
+
+  // Save current values first
+  const provider  = document.getElementById('api-provider').value;
+  const apiKey    = document.getElementById('api-key-input').value.trim();
+  const workerUrl = document.getElementById('api-worker-url').value.trim();
+  const model     = document.getElementById('api-model').value;
+
+  if (!apiKey || !workerUrl) {
+    result.textContent = '⚠ Vul eerst API key en Worker URL in';
+    result.style.color = '#b86a10';
+    return;
+  }
+
+  // Temporarily save for the test call
+  localStorage.setItem('iv_provider',   provider);
+  localStorage.setItem('iv_api_key',    apiKey);
+  localStorage.setItem('iv_worker_url', workerUrl);
+  localStorage.setItem('iv_model',      model);
+
+  try {
+    const resp = await apiCall('Antwoord alleen met: OK', [{role:'user',content:'Test'}], 10);
+    result.textContent = `✓ Verbinding werkt! (${provider === 'google' ? 'Google Gemini' : 'Anthropic Claude'})`;
+    result.style.color = 'var(--g)';
+    updateApiStatusPill();
+  } catch(e) {
+    result.textContent = `✗ Fout: ${e.message}`;
+    result.style.color = '#c0392b';
+  }
+}
+
+// ═══════════ API CALL ═══════════
 async function apiCall(system, messages, maxT=1200){
-  const r=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxT,system,messages})
+  const s = getApiSettings();
+
+  if (!s.apiKey) throw new Error('Geen API key ingesteld — ga naar Configureer → API Instellingen');
+  if (!s.workerUrl) throw new Error('Geen Worker URL ingesteld — ga naar Configureer → API Instellingen');
+
+  const workerUrl = s.workerUrl.replace(/\/$/, '');
+
+  const body = {
+    model:      s.model,
+    max_tokens: maxT,
+    system,
+    messages
+  };
+
+  const r = await fetch(workerUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type':    'application/json',
+      'x-api-key':       s.apiKey,
+      'x-provider':      s.provider,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify(body)
   });
-  const d=await r.json();
-  if(d.error) throw new Error(d.error.message);
-  return d.content.map(b=>b.text||'').join('');
+
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d.content.map(b => b.text||'').join('');
 }
 
 // ═══════════ RENDER SOURCES ═══════════
