@@ -571,6 +571,11 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <button class="saveb" onclick="saveSupabaseSettings()">Verbinden</button>
           <span class="saok" id="sb-ok">✓ Verbonden!</span>
+          <button class="saveb" style="background:var(--sand);color:var(--dark);border:1px solid var(--bdr)" onclick="exportConfig()">⬇ Exporteer config</button>
+          <label class="saveb" style="background:var(--sand);color:var(--dark);border:1px solid var(--bdr);cursor:pointer">
+            ⬆ Importeer config
+            <input type="file" accept=".json" style="display:none" onchange="importConfig(this)">
+          </label>
           <a href="https://supabase.com" target="_blank" style="font-size:11px;color:var(--mut)">Nog geen Supabase account? Gratis aanmaken →</a>
         </div>
       </div>
@@ -618,6 +623,24 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
 </div>
 
 <script>
+// ═══════════ HARDCODED CONFIG ═══════════
+const HC = {
+  sb_url:     'https://yrnrnmwtjsxgzanbunur.supabase.co',
+  sb_key:     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlybnJubXd0anN4Z3phbmJ1bnVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3OTAwOTUsImV4cCI6MjA5NTM2NjA5NX0.dhYAnifSdCHLIqm6FB-c28HX3r6jFN6WtGS_DpvHoT4',
+  provider:   'google',
+  api_key:    'AIzaSyAyxxwfaDQeqv3szcByC9EJ5Kteq2ihsFc',
+  worker_url: 'https://mute-wildflower-c45bdwa.jan-devries.workers.dev',
+  model:      'gemini-2.0-flash',
+};
+
+// Zet hardcoded waarden altijd in localStorage (overschrijft niets als al ingesteld via UI)
+localStorage.setItem('iv_sb_url',     HC.sb_url);
+localStorage.setItem('iv_sb_key',     HC.sb_key);
+localStorage.setItem('iv_provider',   HC.provider);
+localStorage.setItem('iv_api_key',    HC.api_key);
+localStorage.setItem('iv_worker_url', HC.worker_url);
+localStorage.setItem('iv_model',      HC.model);
+
 // ═══════════ SUPABASE DATABASE LAAG ═══════════
 // Transparante laag: gebruikt Supabase als geconfigureerd, anders localStorage
 
@@ -1117,6 +1140,49 @@ function saveSiteConfig() {
   const ok = document.getElementById('cfg-site-ok');
   ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2000);
   renderConfig();
+}
+
+// ═══════════ CONFIG EXPORT/IMPORT ═══════════
+function exportConfig() {
+  const config = {
+    version: 1,
+    iv_sb_url:     localStorage.getItem('iv_sb_url') || '',
+    iv_sb_key:     localStorage.getItem('iv_sb_key') || '',
+    iv_provider:   localStorage.getItem('iv_provider') || 'anthropic',
+    iv_api_key:    localStorage.getItem('iv_api_key') || '',
+    iv_worker_url: localStorage.getItem('iv_worker_url') || '',
+    iv_model:      localStorage.getItem('iv_model') || '',
+  };
+  const blob = new Blob([JSON.stringify(config, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'impactvandaag-config.json';
+  a.click();
+}
+
+function importConfig(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const cfg = JSON.parse(e.target.result);
+      if (cfg.iv_sb_url)     localStorage.setItem('iv_sb_url',     cfg.iv_sb_url);
+      if (cfg.iv_sb_key)     localStorage.setItem('iv_sb_key',     cfg.iv_sb_key);
+      if (cfg.iv_provider)   localStorage.setItem('iv_provider',   cfg.iv_provider);
+      if (cfg.iv_api_key)    localStorage.setItem('iv_api_key',    cfg.iv_api_key);
+      if (cfg.iv_worker_url) localStorage.setItem('iv_worker_url', cfg.iv_worker_url);
+      if (cfg.iv_model)      localStorage.setItem('iv_model',      cfg.iv_model);
+      await initSupabase();
+      loadApiSettingsUI();
+      const sbUrl = document.getElementById('sb-url-input');
+      const sbKey = document.getElementById('sb-key-input');
+      if (sbUrl) sbUrl.value = cfg.iv_sb_url || '';
+      if (sbKey) sbKey.value = cfg.iv_sb_key || '';
+      alert('✓ Configuratie geladen!');
+    } catch(err) { alert('Fout: ' + err.message); }
+  };
+  reader.readAsText(file);
 }
 
 // ═══════════ INIT ═══════════
