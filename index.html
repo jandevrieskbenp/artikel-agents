@@ -17,7 +17,17 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 
-/* ── SITE SWITCHER ── */
+/* ── LOGIN SCHERM ── */
+#login-screen{position:fixed;inset:0;background:var(--dark);display:flex;align-items:center;justify-content:center;z-index:9999;}
+#login-screen.hidden{display:none;}
+.login-box{background:var(--wht);border-radius:var(--rxl);padding:2.5rem;width:340px;display:flex;flex-direction:column;gap:1rem;}
+.login-logo{font-family:'Fraunces',serif;font-size:24px;font-weight:600;color:var(--dark);text-align:center;margin-bottom:.5rem;}
+.login-logo span{color:#5ecfa0;}
+.login-inp{width:100%;padding:10px 13px;border:1px solid var(--bdr);border-radius:var(--rmd);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--dark);background:var(--sand);}
+.login-inp:focus{outline:none;border-color:var(--g);}
+.login-btn{width:100%;padding:11px;background:var(--g);color:#fff;border:none;border-radius:var(--rmd);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+.login-btn:hover{background:var(--gm);}
+.login-err{font-size:12px;color:#c0392b;text-align:center;display:none;}
 .site-switcher{display:flex;gap:4px;background:rgba(255,255,255,.08);border-radius:var(--rlg);padding:3px;}
 .site-btn{display:flex;align-items:center;gap:6px;padding:5px 12px;border:none;background:transparent;color:rgba(255,255,255,.6);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;border-radius:var(--rmd);cursor:pointer;transition:all .2s;white-space:nowrap;}
 .site-btn.active{background:rgba(255,255,255,.15);color:#fff;}
@@ -262,6 +272,25 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
   <span class="hbadge" id="site-badge">Artikel Agents</span>
 </header>
 
+<!-- Hidden stubs voor JS compatibiliteit -->
+<div style="display:none">
+  <input id="api-provider" value="google">
+  <input id="api-provider-g" value="google">
+  <select id="api-model"></select>
+  <input id="api-key-input">
+  <input id="api-worker-url">
+  <input id="sb-url-input">
+  <input id="sb-key-input">
+  <div id="api-status-pill"></div>
+  <div id="sb-status-pill"></div>
+  <span id="api-settings-ok"></span>
+  <span id="api-test-result"></span>
+  <span id="sb-ok"></span>
+  <div id="api-key-hint"></div>
+  <div id="prov-anthropic"></div>
+  <div id="prov-google"></div>
+</div>
+
 <div class="app">
 <aside class="sidebar">
   <div class="ss">
@@ -479,107 +508,7 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
   <div class="panel" id="panel-config">
     <div class="chint">💡 Pas elke agent aan per website. Wijzigingen worden direct opgeslagen.</div>
 
-    <!-- API INSTELLINGEN -->
-    <div class="cfg-card">
-      <div class="cchead">
-        <span style="font-size:20px">🔑</span>
-        <div>
-          <div style="font-weight:500;font-size:14px">API Instellingen</div>
-          <div style="font-size:11px;color:var(--mut)">Provider, model, API key en Worker URL</div>
-        </div>
-        <div id="api-status-pill" style="margin-left:auto;font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--bdr);background:var(--sand);color:var(--mut)">Niet geconfigureerd</div>
-      </div>
-      <div class="ccbody">
 
-        <!-- Provider selector -->
-        <div>
-          <div class="flbl">AI Provider</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
-            <label id="prov-anthropic" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--rmd);cursor:pointer;background:var(--sand);transition:all .15s">
-              <input type="radio" name="provider" id="api-provider" value="anthropic" style="display:none">
-              <div style="width:28px;height:28px;border-radius:6px;background:#1c1c1a;display:flex;align-items:center;justify-content:center;font-size:14px">🤖</div>
-              <div><div style="font-size:13px;font-weight:500">Anthropic</div><div style="font-size:10px;color:var(--mut)">Claude Sonnet / Opus</div></div>
-            </label>
-            <label id="prov-google" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--rmd);cursor:pointer;background:var(--sand);transition:all .15s">
-              <input type="radio" name="provider" id="api-provider-g" value="google" style="display:none">
-              <div style="width:28px;height:28px;border-radius:6px;background:#4285f4;display:flex;align-items:center;justify-content:center;font-size:14px">G</div>
-              <div><div style="font-size:13px;font-weight:500">Google</div><div style="font-size:10px;color:var(--mut)">Gemini Flash / Pro</div></div>
-            </label>
-          </div>
-        </div>
-
-        <!-- Model -->
-        <div>
-          <div class="flbl">Model</div>
-          <select class="finp" id="api-model" style="cursor:pointer"></select>
-        </div>
-
-        <!-- API Key -->
-        <div>
-          <div class="flbl" id="api-key-label">API Key</div>
-          <div style="display:flex;gap:6px">
-            <input class="finp" id="api-key-input" type="password" placeholder="sk-ant-... of AIza..." style="flex:1;font-family:monospace;font-size:12px">
-            <button onclick="toggleKeyVis()" style="padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--rmd);background:var(--sand);cursor:pointer;font-size:13px" title="Toon/verberg key">👁</button>
-          </div>
-          <div id="api-key-hint" style="font-size:11px;color:var(--mut);margin-top:4px"></div>
-        </div>
-
-        <!-- Worker URL -->
-        <div>
-          <div class="flbl">Cloudflare Worker URL</div>
-          <input class="finp" id="api-worker-url" placeholder="https://anthropic-proxy.jouwaccount.workers.dev" style="font-size:12px">
-          <div style="font-size:11px;color:var(--mut);margin-top:4px">Gevonden in Cloudflare → Workers → jouw worker → URL bovenaan</div>
-        </div>
-
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <button class="saveb" onclick="saveApiSettings()">Opslaan</button>
-          <button class="saveb" style="background:var(--sand);color:var(--dark);border:1px solid var(--bdr)" onclick="testApiConnection()">Verbinding testen</button>
-          <span class="saok" id="api-settings-ok">✓ Opgeslagen!</span>
-          <span id="api-test-result" style="font-size:12px;display:none"></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- SUPABASE INSTELLINGEN -->
-    <div class="cfg-card">
-      <div class="cchead">
-        <span style="font-size:20px">🗄️</span>
-        <div>
-          <div style="font-weight:500;font-size:14px">Database — Supabase</div>
-          <div style="font-size:11px;color:var(--mut)">Optioneel — sla data op buiten de browser</div>
-        </div>
-        <div id="sb-status-pill" style="margin-left:auto;font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--bdr);background:var(--sand);color:var(--mut)">Niet geconfigureerd</div>
-      </div>
-      <div class="ccbody">
-        <div class="chint" style="margin:0">
-          💡 Zonder Supabase werkt de app gewoon — data wordt dan opgeslagen in je browser. Met Supabase heb je toegang vanaf elk apparaat en blijft niets verloren bij het wissen van je browser.
-        </div>
-        <div>
-          <div class="flbl">Project URL</div>
-          <input class="finp" id="sb-url-input" placeholder="https://xxxx.supabase.co" style="font-size:12px">
-        </div>
-        <div>
-          <div class="flbl">Anon Public Key</div>
-          <div style="display:flex;gap:6px">
-            <input class="finp" id="sb-key-input" type="password" placeholder="eyJhbGciOi..." style="flex:1;font-size:12px;font-family:monospace">
-            <button onclick="document.getElementById('sb-key-input').type=document.getElementById('sb-key-input').type==='password'?'text':'password'" style="padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--rmd);background:var(--sand);cursor:pointer;font-size:13px">👁</button>
-          </div>
-          <div style="font-size:11px;color:var(--mut);margin-top:4px">
-            Vind je keys via <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--g)">supabase.com/dashboard</a> → jouw project → Project Settings → API
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <button class="saveb" onclick="saveSupabaseSettings()">Verbinden</button>
-          <span class="saok" id="sb-ok">✓ Verbonden!</span>
-          <button class="saveb" style="background:var(--sand);color:var(--dark);border:1px solid var(--bdr)" onclick="exportConfig()">⬇ Exporteer config</button>
-          <label class="saveb" style="background:var(--sand);color:var(--dark);border:1px solid var(--bdr);cursor:pointer">
-            ⬆ Importeer config
-            <input type="file" accept=".json" style="display:none" onchange="importConfig(this)">
-          </label>
-          <a href="https://supabase.com" target="_blank" style="font-size:11px;color:var(--mut)">Nog geen Supabase account? Gratis aanmaken →</a>
-        </div>
-      </div>
-    </div>
     <div class="cfg-card" style="margin-bottom:0">
       <div class="cchead">
         <span style="font-size:20px" id="cfg-site-icon">🌐</span>
@@ -617,12 +546,155 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
     </div>
     <div style="margin:.8rem 0 .4rem;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.8px;color:var(--mut)">Agent prompts</div>
     <div id="cgrid"></div>
+
+    <!-- BEVEILIGDE SECTIE -->
+    <div class="cfg-card" style="border:1.5px dashed var(--bdr)">
+      <div class="cchead" style="cursor:pointer" onclick="toggleLockedSection()">
+        <span style="font-size:20px" id="lock-icon">🔒</span>
+        <div>
+          <div style="font-weight:500;font-size:14px">Beveiligde instellingen</div>
+          <div style="font-size:11px;color:var(--mut)">API keys, Worker URL en Supabase database</div>
+        </div>
+        <span id="lock-toggle-hint" style="font-size:12px;color:var(--mut);margin-left:auto">Klik om te ontgrendelen</span>
+      </div>
+      <div id="lock-gate" class="ccbody">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="finp" id="gate-pw" type="password" placeholder="Wachtwoord..."
+            style="flex:1" onkeydown="if(event.key==='Enter')unlockSection()">
+          <button class="saveb" onclick="unlockSection()">Ontgrendel</button>
+        </div>
+        <div id="gate-err" style="font-size:11px;color:#c0392b;display:none">Onjuist wachtwoord</div>
+      </div>
+      <div id="lock-content" style="display:none">
+        <div class="ccbody" style="border-top:1px solid var(--bdr)">
+          <div style="font-size:11px;font-weight:500;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">AI Provider</div>
+          <div><div class="flbl">Provider</div>
+            <select class="finp" id="hc-provider"><option value="google">Google Gemini</option><option value="anthropic">Anthropic Claude</option></select>
+          </div>
+          <div><div class="flbl">Model</div><input class="finp" id="hc-model" placeholder="gemini-2.0-flash"></div>
+          <div><div class="flbl">API Key</div>
+            <div style="display:flex;gap:6px">
+              <input class="finp" id="hc-apikey" type="password" style="flex:1;font-family:monospace;font-size:12px">
+              <button onclick="var i=document.getElementById('hc-apikey');i.type=i.type==='password'?'text':'password'" style="padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--rmd);background:var(--sand);cursor:pointer">👁</button>
+            </div>
+          </div>
+          <div><div class="flbl">Cloudflare Worker URL</div><input class="finp" id="hc-worker" style="font-size:12px"></div>
+          <div style="font-size:11px;font-weight:500;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin:8px 0 4px">Supabase</div>
+          <div><div class="flbl">Project URL</div><input class="finp" id="hc-sburl" style="font-size:12px"></div>
+          <div><div class="flbl">Anon Key</div>
+            <div style="display:flex;gap:6px">
+              <input class="finp" id="hc-sbkey" type="password" style="flex:1;font-family:monospace;font-size:12px">
+              <button onclick="var i=document.getElementById('hc-sbkey');i.type=i.type==='password'?'text':'password'" style="padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--rmd);background:var(--sand);cursor:pointer">👁</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+            <button class="saveb" onclick="saveLockedSettings()">Opslaan & verbinden</button>
+            <span id="lock-save-ok" style="font-size:11px;color:var(--g);display:none">✓ Opgeslagen!</span>
+            <button onclick="lockSection()" style="font-size:11px;color:var(--mut);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;margin-left:auto">🔒 Vergrendel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
 </main>
 </div>
 
 <script>
+// ═══════════ LOGIN ═══════════
+const LOGIN_EMAIL = 'jandervries1997@outlook.com';
+const LOGIN_PW    = 'adeefsfdeadwadafscfaeda';
+
+function checkLogin() {
+  return sessionStorage.getItem('iv_auth') === 'ok';
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const pw    = document.getElementById('login-pw').value;
+  if (email === LOGIN_EMAIL && pw === LOGIN_PW) {
+    sessionStorage.setItem('iv_auth', 'ok');
+    document.getElementById('login-screen').classList.add('hidden');
+    document.querySelector('[data-tab="config"]').style.display = 'block';
+    init();
+  } else {
+    const err = document.getElementById('login-err');
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 3000);
+  }
+}
+
+// ═══════════ LOCKED SECTION ═══════════
+const GATE_PW = 'adeefsfdeadwadafscfaeda';
+
+function toggleLockedSection() {
+  const content = document.getElementById('lock-content');
+  if (content.style.display === 'none') {
+    document.getElementById('gate-pw').focus();
+  }
+}
+
+function unlockSection() {
+  const pw = document.getElementById('gate-pw').value;
+  if (pw === GATE_PW) {
+    document.getElementById('lock-gate').style.display = 'none';
+    document.getElementById('lock-content').style.display = 'block';
+    document.getElementById('lock-icon').textContent = '🔓';
+    document.getElementById('lock-toggle-hint').textContent = 'Ontgrendeld';
+    // Vul huidige waarden in
+    document.getElementById('hc-provider').value = localStorage.getItem('iv_provider') || HC.provider;
+    document.getElementById('hc-model').value    = localStorage.getItem('iv_model')    || HC.model;
+    document.getElementById('hc-apikey').value   = localStorage.getItem('iv_api_key')  || HC.api_key;
+    document.getElementById('hc-worker').value   = localStorage.getItem('iv_worker_url')|| HC.worker_url;
+    document.getElementById('hc-sburl').value    = localStorage.getItem('iv_sb_url')   || HC.sb_url;
+    document.getElementById('hc-sbkey').value    = localStorage.getItem('iv_sb_key')   || HC.sb_key;
+  } else {
+    const err = document.getElementById('gate-err');
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 2500);
+    document.getElementById('gate-pw').value = '';
+  }
+}
+
+function lockSection() {
+  document.getElementById('lock-gate').style.display = 'block';
+  document.getElementById('lock-content').style.display = 'none';
+  document.getElementById('lock-icon').textContent = '🔒';
+  document.getElementById('lock-toggle-hint').textContent = 'Klik om te ontgrendelen';
+  document.getElementById('gate-pw').value = '';
+}
+
+async function saveLockedSettings() {
+  const provider  = document.getElementById('hc-provider').value;
+  const model     = document.getElementById('hc-model').value.trim();
+  const apiKey    = document.getElementById('hc-apikey').value.trim();
+  const workerUrl = document.getElementById('hc-worker').value.trim();
+  const sbUrl     = document.getElementById('hc-sburl').value.trim();
+  const sbKey     = document.getElementById('hc-sbkey').value.trim();
+
+  localStorage.setItem('iv_provider',   provider);
+  localStorage.setItem('iv_model',      model);
+  localStorage.setItem('iv_api_key',    apiKey);
+  localStorage.setItem('iv_worker_url', workerUrl);
+  localStorage.setItem('iv_sb_url',     sbUrl);
+  localStorage.setItem('iv_sb_key',     sbKey);
+
+  // Herverbind Supabase en sla op
+  await initSupabase();
+  if (SB.ok) {
+    await SB.saveApiInstellingen(provider, model, workerUrl, apiKey);
+  }
+
+  // Update API settings UI
+  _currentProvider = provider;
+  loadApiSettingsUI();
+
+  const ok = document.getElementById('lock-save-ok');
+  ok.style.display = 'inline';
+  setTimeout(() => ok.style.display = 'none', 2500);
+}
+
 // ═══════════ HARDCODED CONFIG ═══════════
 const HC = {
   sb_url:     'https://yrnrnmwtjsxgzanbunur.supabase.co',
@@ -2269,6 +2341,7 @@ async function startDagelijkseRun(){
   btn.disabled = false; btn.textContent = '▶ Start dagelijkse run';
 }
 
+// ═══════════ STARTUP ═══════════
 init();
 </script>
 </body>
