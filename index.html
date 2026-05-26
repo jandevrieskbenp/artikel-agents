@@ -1368,40 +1368,26 @@ function getApiSettings() {
 }
 
 async function saveApiSettings() {
-  const provider  = document.getElementById('api-provider').value;
+  // Gebruik _currentProvider als fallback (betrouwbaarder dan hidden input)
+  const provider  = _currentProvider || document.getElementById('api-provider').value || 'anthropic';
   const apiKey    = document.getElementById('api-key-input').value.trim();
   const workerUrl = document.getElementById('api-worker-url').value.trim();
   const model     = document.getElementById('api-model').value;
+
   localStorage.setItem('iv_provider',   provider);
   localStorage.setItem('iv_api_key',    apiKey);
   localStorage.setItem('iv_worker_url', workerUrl);
   localStorage.setItem('iv_model',      model);
 
-  // Debug info
-  const sbUrl = localStorage.getItem('iv_sb_url');
-  const sbKey = localStorage.getItem('iv_sb_key');
-  console.log('=== saveApiSettings debug ===');
-  console.log('SB.ok:', SB.ok);
-  console.log('SB._client:', SB._client);
-  console.log('sb_url aanwezig:', !!sbUrl);
-  console.log('sb_key aanwezig:', !!sbKey);
-  console.log('window.supabase:', !!(window.supabase || window.supabaseJs));
+  console.log('saveApiSettings:', {provider, model, workerUrl, hasKey: !!apiKey, SBok: SB.ok});
 
-  // Zorg dat Supabase verbonden is
-  if (!SB.ok) {
-    console.log('→ Supabase niet actief, initialiseren...');
-    await initSupabase();
-    console.log('→ Na init: SB.ok =', SB.ok);
-  }
+  if (!SB.ok) { await initSupabase(); }
 
   if (SB.ok) {
-    console.log('→ Opslaan in Supabase...');
     await SB.saveApiInstellingen(provider, model, workerUrl, apiKey);
-    console.log('→ Klaar');
+    console.log('✓ Opgeslagen in Supabase');
   } else {
-    console.warn('→ Supabase niet beschikbaar, alleen lokaal opgeslagen');
-    console.warn('→ sb_url:', sbUrl);
-    console.warn('→ sb_key (eerste 20 chars):', sbKey?.substring(0,20));
+    console.warn('Supabase niet actief — alleen lokaal opgeslagen. SB.ok:', SB.ok, '_client:', SB._client);
   }
 
   const ok = document.getElementById('api-settings-ok');
