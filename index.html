@@ -537,6 +537,42 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
         </div>
       </div>
     </div>
+
+    <!-- SUPABASE INSTELLINGEN -->
+    <div class="cfg-card">
+      <div class="cchead">
+        <span style="font-size:20px">🗄️</span>
+        <div>
+          <div style="font-weight:500;font-size:14px">Database — Supabase</div>
+          <div style="font-size:11px;color:var(--mut)">Optioneel — sla data op buiten de browser</div>
+        </div>
+        <div id="sb-status-pill" style="margin-left:auto;font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--bdr);background:var(--sand);color:var(--mut)">Niet geconfigureerd</div>
+      </div>
+      <div class="ccbody">
+        <div class="chint" style="margin:0">
+          💡 Zonder Supabase werkt de app gewoon — data wordt dan opgeslagen in je browser. Met Supabase heb je toegang vanaf elk apparaat en blijft niets verloren bij het wissen van je browser.
+        </div>
+        <div>
+          <div class="flbl">Project URL</div>
+          <input class="finp" id="sb-url-input" placeholder="https://xxxx.supabase.co" style="font-size:12px">
+        </div>
+        <div>
+          <div class="flbl">Anon Public Key</div>
+          <div style="display:flex;gap:6px">
+            <input class="finp" id="sb-key-input" type="password" placeholder="eyJhbGciOi..." style="flex:1;font-size:12px;font-family:monospace">
+            <button onclick="document.getElementById('sb-key-input').type=document.getElementById('sb-key-input').type==='password'?'text':'password'" style="padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--rmd);background:var(--sand);cursor:pointer;font-size:13px">👁</button>
+          </div>
+          <div style="font-size:11px;color:var(--mut);margin-top:4px">
+            Vind je keys via <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--g)">supabase.com/dashboard</a> → jouw project → Project Settings → API
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="saveb" onclick="saveSupabaseSettings()">Verbinden</button>
+          <span class="saok" id="sb-ok">✓ Verbonden!</span>
+          <a href="https://supabase.com" target="_blank" style="font-size:11px;color:var(--mut)">Nog geen Supabase account? Gratis aanmaken →</a>
+        </div>
+      </div>
+    </div>
     <div class="cfg-card" style="margin-bottom:0">
       <div class="cchead">
         <span style="font-size:20px" id="cfg-site-icon">🌐</span>
@@ -580,6 +616,205 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
 </div>
 
 <script>
+// ═══════════ SUPABASE DATABASE LAAG ═══════════
+// Transparante laag: gebruikt Supabase als geconfigureerd, anders localStorage
+
+const SB = {
+  _client: null,
+
+  // Initialiseer met URL en key uit instellingen
+  init(url, key) {
+    if (!url || !key) { this._client = null; return false; }
+    try {
+      const { createClient } = supabase;
+      this._client = createClient(url, key);
+      return true;
+    } catch(e) {
+      console.warn('Supabase init mislukt:', e);
+      this._client = null;
+      return false;
+    }
+  },
+
+  get ok() { return !!this._client; },
+
+  // ── Artikelen ──
+  async saveArtikel(site, onderwerp, type, artikel) {
+    if (this.ok) {
+      const { error } = await this._client.from('artikelen').insert({ site, onderwerp, type, artikel });
+      if (error) console.error('SB saveArtikel:', error);
+    }
+    // Altijd ook lokaal (snelle UI)
+    const key = 'iv_dag_history_' + site;
+    const hist = JSON.parse(localStorage.getItem(key)||'[]');
+    hist.unshift({ date: new Date().toISOString(), onderwerp, type, artikel });
+    localStorage.setItem(key, JSON.stringify(hist.slice(0,50)));
+  },
+
+  async getArtikelen(site) {
+    if (this.ok) {
+      const { data, error } = await this._client
+        .from('artikelen').select('*').eq('site', site)
+        .order('datum', { ascending: false }).limit(50);
+      if (!error && data) return data.map(r => ({
+        date: r.datum, onderwerp: r.onderwerp, type: r.type, artikel: r.artikel
+      }));
+    }
+    return JSON.parse(localStorage.getItem('iv_dag_history_' + site)||'[]');
+  },
+
+  // ── Site config ──
+  async saveSiteConfig(site, config) {
+    if (this.ok) {
+      const { error } = await this._client.from('site_config')
+        .upsert({ site, config }, { onConflict: 'site' });
+      if (error) console.error('SB saveSiteConfig:', error);
+    }
+    localStorage.setItem('iv_site_cfg_' + site, JSON.stringify(config));
+  },
+
+  async getSiteConfig(site) {
+    if (this.ok) {
+      const { data, error } = await this._client
+        .from('site_config').select('config').eq('site', site).single();
+      if (!error && data) return data.config;
+    }
+    const saved = localStorage.getItem('iv_site_cfg_' + site);
+    return saved ? JSON.parse(saved) : null;
+  },
+
+  // ── Agent prompts ──
+  async saveAgents(site, agentsArr) {
+    if (this.ok) {
+      const rows = agentsArr.map(a => ({ site, agent_id: a.id, prompt: a }));
+      const { error } = await this._client.from('agent_prompts')
+        .upsert(rows, { onConflict: 'site,agent_id' });
+      if (error) console.error('SB saveAgents:', error);
+    }
+    localStorage.setItem('iv_ag6_' + site, JSON.stringify(agentsArr));
+  },
+
+  async getAgents(site) {
+    if (this.ok) {
+      const { data, error } = await this._client
+        .from('agent_prompts').select('prompt').eq('site', site);
+      if (!error && data?.length) return data.map(r => r.prompt);
+    }
+    const saved = localStorage.getItem('iv_ag6_' + site);
+    return saved ? JSON.parse(saved) : null;
+  },
+
+  // ── Blacklist ──
+  async saveBlacklist(site, tekst) {
+    if (this.ok) {
+      const { error } = await this._client.from('dag_blacklist')
+        .upsert({ site, onderwerpen: tekst }, { onConflict: 'site' });
+      if (error) console.error('SB saveBlacklist:', error);
+    }
+    localStorage.setItem('iv_dag_blacklist_' + site, tekst);
+  },
+
+  async getBlacklist(site) {
+    if (this.ok) {
+      const { data, error } = await this._client
+        .from('dag_blacklist').select('onderwerpen').eq('site', site).single();
+      if (!error && data) return data.onderwerpen || '';
+    }
+    return localStorage.getItem('iv_dag_blacklist_' + site) || '';
+  },
+
+  // ── API instellingen (zonder API key!) ──
+  async saveApiInstellingen(provider, model, workerUrl) {
+    if (this.ok) {
+      const { error } = await this._client.from('api_instellingen')
+        .upsert({ id: 'global', provider, model, worker_url: workerUrl }, { onConflict: 'id' });
+      if (error) console.error('SB saveApiInstellingen:', error);
+    }
+  },
+
+  async getApiInstellingen() {
+    if (this.ok) {
+      const { data, error } = await this._client
+        .from('api_instellingen').select('*').eq('id','global').single();
+      if (!error && data) return data;
+    }
+    return null;
+  },
+
+  // ── Verbinding testen ──
+  async testVerbinding() {
+    if (!this._client) return false;
+    const { error } = await this._client.from('api_instellingen').select('id').limit(1);
+    return !error;
+  }
+};
+
+// Laad Supabase SDK dynamisch
+function loadSupabaseSDK() {
+  return new Promise((resolve) => {
+    if (window.supabase) { resolve(true); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+  });
+}
+
+async function initSupabase() {
+  const url = localStorage.getItem('iv_sb_url') || '';
+  const key = localStorage.getItem('iv_sb_key') || '';
+  if (!url || !key) return;
+  await loadSupabaseSDK();
+  const ok = SB.init(url, key);
+  if (ok) {
+    updateSbStatusPill('verbonden');
+    // Sync API instellingen vanuit DB (behalve key)
+    const apiDb = await SB.getApiInstellingen();
+    if (apiDb) {
+      if (!localStorage.getItem('iv_provider'))    localStorage.setItem('iv_provider',   apiDb.provider);
+      if (!localStorage.getItem('iv_worker_url'))  localStorage.setItem('iv_worker_url', apiDb.worker_url);
+      if (!localStorage.getItem('iv_model'))       localStorage.setItem('iv_model',      apiDb.model);
+    }
+  }
+}
+
+function updateSbStatusPill(state) {
+  const pill = document.getElementById('sb-status-pill');
+  if (!pill) return;
+  if (state === 'verbonden') {
+    pill.textContent = '✓ Verbonden'; pill.style.background='var(--gl)';
+    pill.style.color='var(--g)'; pill.style.borderColor='#b8deca';
+  } else if (state === 'fout') {
+    pill.textContent = '✗ Verbinding mislukt'; pill.style.background='#fde8e8';
+    pill.style.color='#c0392b'; pill.style.borderColor='#f5b7b1';
+  } else {
+    pill.textContent = 'Niet geconfigureerd'; pill.style.background='var(--sand)';
+    pill.style.color='var(--mut)'; pill.style.borderColor='var(--bdr)';
+  }
+}
+
+async function saveSupabaseSettings() {
+  const url = document.getElementById('sb-url-input').value.trim();
+  const key = document.getElementById('sb-key-input').value.trim();
+  localStorage.setItem('iv_sb_url', url);
+  localStorage.setItem('iv_sb_key', key);
+  await loadSupabaseSDK();
+  const ok = SB.init(url, key);
+  if (ok) {
+    const test = await SB.testVerbinding();
+    if (test) {
+      updateSbStatusPill('verbonden');
+      const okEl = document.getElementById('sb-ok');
+      okEl.style.display='inline'; setTimeout(()=>okEl.style.display='none',2000);
+    } else {
+      updateSbStatusPill('fout');
+    }
+  } else {
+    updateSbStatusPill('fout');
+  }
+}
+
 // ═══════════ SITE CONFIGS ═══════════
 const SITE_DEFAULTS = {
   iv: {
@@ -744,7 +979,7 @@ let catRatings = {};
 let globalRating = 0;
 let regenPlan = [];
 
-function saveAgents(){ localStorage.setItem('iv_ag6_' + currentSite, JSON.stringify(agents)); }
+function saveAgents(){ SB.saveAgents(currentSite, agents); }
 
 // ═══════════ SITE SWITCHER ═══════════
 function switchSite(site) {
@@ -805,7 +1040,7 @@ function saveSiteConfig() {
   cfg.jargon = document.getElementById('cfg-jargon').value;
   cfg.verboden = document.getElementById('cfg-verboden').value;
   cfg.tov = document.getElementById('cfg-tov').value;
-  localStorage.setItem('iv_site_cfg_' + currentSite, JSON.stringify(cfg));
+  SB.saveSiteConfig(currentSite, cfg);
 
   // Rebuild agents with new config and save
   agents = makeAgents(currentSite);
@@ -819,7 +1054,7 @@ function saveSiteConfig() {
 }
 
 // ═══════════ INIT ═══════════
-function init(){
+async function init(){
   // Apply saved site theme on load
   if(currentSite === 'oo') {
     document.body.className = 'site-oo';
@@ -830,16 +1065,22 @@ function init(){
   renderSidebar(); renderFlow(); renderConfig(); setupTabs(); setupTone(); setupStars();
   loadSiteConfigUI();
   loadApiSettingsUI();
-  initDagelijks();
+
+  // Init Supabase first, then load data
+  await initSupabase();
+
+  // Load SB credentials into UI
+  const sbUrl = document.getElementById('sb-url-input');
+  const sbKey = document.getElementById('sb-key-input');
+  if (sbUrl) sbUrl.value = localStorage.getItem('iv_sb_url') || '';
+  if (sbKey) sbKey.value = localStorage.getItem('iv_sb_key') || '';
+
+  await initDagelijks();
 
   // Warn if API not configured
   const s = getApiSettings();
   if (!s.apiKey || !s.workerUrl) {
-    setTimeout(() => {
-      switchTab('config');
-      document.getElementById('cfg-site-ok'); // scroll to top
-      window.scrollTo(0,0);
-    }, 800);
+    setTimeout(() => { switchTab('config'); }, 800);
   } else {
     startIntake();
   }
@@ -1657,17 +1898,19 @@ INVALSHOEK: [1-2 zinnen over de specifieke insteek]
 BRIEFING: [3-5 zinnen strategische context voor de writers]`;
 
 // Dagelijks state
-let dagHistory = JSON.parse(localStorage.getItem('iv_dag_history_' + currentSite)||'[]');
-let dagBlacklist = localStorage.getItem('iv_dag_blacklist_' + currentSite)||'';
+let dagHistory = [];
+let dagBlacklist = '';
 let dagRunning = false;
 
-function initDagelijks(){
-  dagHistory = JSON.parse(localStorage.getItem('iv_dag_history_' + currentSite)||'[]');
-  dagBlacklist = localStorage.getItem('iv_dag_blacklist_' + currentSite)||'';
+async function initDagelijks(){
+  dagHistory  = await SB.getArtikelen(currentSite);
+  dagBlacklist = await SB.getBlacklist(currentSite);
   renderDagHistory();
-  document.getElementById('dag-blacklist').value = dagBlacklist;
+  const blEl = document.getElementById('dag-blacklist');
+  if (blEl) blEl.value = dagBlacklist;
   const last = dagHistory[0];
-  document.getElementById('dag-last-run').textContent = last ? formatDate(last.date) : 'Nog nooit gedraaid';
+  const lastEl = document.getElementById('dag-last-run');
+  if (lastEl) lastEl.textContent = last ? formatDate(last.date) : 'Nog nooit gedraaid';
   const dagMailDiv = document.getElementById('dag-mail-row');
   if(dagMailDiv) dagMailDiv.style.display='none';
 }
@@ -1678,7 +1921,7 @@ function formatDate(iso){
 
 function saveBlacklist(){
   dagBlacklist = document.getElementById('dag-blacklist').value;
-  localStorage.setItem('iv_dag_blacklist_' + currentSite, dagBlacklist);
+  SB.saveBlacklist(currentSite, dagBlacklist);
   const ok = document.getElementById('dag-bl-ok');
   ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2000);
 }
@@ -1688,6 +1931,7 @@ function clearHistory(){
   dagHistory=[];
   localStorage.removeItem('iv_dag_history_' + currentSite);
   dagBlacklist='';
+  SB.saveBlacklist(currentSite, '');
   localStorage.removeItem('iv_dag_blacklist_' + currentSite);
   document.getElementById('dag-blacklist').value='';
   renderDagHistory();
@@ -1850,11 +2094,11 @@ async function startDagelijkseRun(){
       artikel: final
     };
     dagHistory.unshift(histItem);
-    localStorage.setItem('iv_dag_history_' + currentSite, JSON.stringify(dagHistory.slice(0,50)));
+    await SB.saveArtikel(currentSite, gekozenOnderwerp, artikelType, final);
 
     // Update blacklist
     dagBlacklist = (dagBlacklist ? dagBlacklist + '\n' : '') + gekozenOnderwerp;
-    localStorage.setItem('iv_dag_blacklist_' + currentSite, dagBlacklist);
+    await SB.saveBlacklist(currentSite, dagBlacklist);
     document.getElementById('dag-blacklist').value = dagBlacklist;
 
     // Render article and history
