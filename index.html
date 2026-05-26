@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ImpactVandaag — Artikel Agents</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<!-- Supabase SDK — altijd geladen, ook als nog niet geconfigureerd -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root {
   --g:#1a6b4a;--gl:#e8f4ef;--gm:#2d8a62;
@@ -626,11 +628,18 @@ const SB = {
   init(url, key) {
     if (!url || !key) { this._client = null; return false; }
     try {
-      const { createClient } = supabase;
-      this._client = createClient(url, key);
+      // Supabase UMD kan exporteren als window.supabase of window.supabaseJs
+      const lib = window.supabase || window.supabaseJs;
+      if (!lib || !lib.createClient) {
+        console.error('Supabase SDK niet geladen — window.supabase:', window.supabase);
+        this._client = null;
+        return false;
+      }
+      this._client = lib.createClient(url, key);
+      console.log('✓ Supabase client aangemaakt voor:', url);
       return true;
     } catch(e) {
-      console.warn('Supabase init mislukt:', e);
+      console.error('Supabase init fout:', e);
       this._client = null;
       return false;
     }
@@ -749,15 +758,17 @@ const SB = {
   }
 };
 
-// Laad Supabase SDK dynamisch
+// SDK is geladen via script tag in head — deze functie checkt alleen of het gelukt is
 function loadSupabaseSDK() {
   return new Promise((resolve) => {
-    if (window.supabase) { resolve(true); return; }
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
-    s.onload = () => resolve(true);
-    s.onerror = () => resolve(false);
-    document.head.appendChild(s);
+    // Geef de browser even tijd als de script tag nog niet klaar is
+    if (window.supabase || window.supabaseJs) { resolve(true); return; }
+    let tries = 0;
+    const check = setInterval(() => {
+      tries++;
+      if (window.supabase || window.supabaseJs) { clearInterval(check); resolve(true); }
+      else if (tries > 20) { clearInterval(check); console.error('Supabase SDK niet beschikbaar na wachten'); resolve(false); }
+    }, 100);
   });
 }
 
@@ -789,6 +800,9 @@ function updateSbStatusPill(state) {
   } else if (state === 'fout') {
     pill.textContent = '✗ Verbinding mislukt'; pill.style.background='#fde8e8';
     pill.style.color='#c0392b'; pill.style.borderColor='#f5b7b1';
+  } else if (state === 'bezig') {
+    pill.textContent = '⏳ Verbinden...'; pill.style.background='#fff8ec';
+    pill.style.color='#b86a10'; pill.style.borderColor='#e8c07a';
   } else {
     pill.textContent = 'Niet geconfigureerd'; pill.style.background='var(--sand)';
     pill.style.color='var(--mut)'; pill.style.borderColor='var(--bdr)';
@@ -798,21 +812,35 @@ function updateSbStatusPill(state) {
 async function saveSupabaseSettings() {
   const url = document.getElementById('sb-url-input').value.trim();
   const key = document.getElementById('sb-key-input').value.trim();
+  if (!url || !key) {
+    updateSbStatusPill('fout');
+    alert('Vul zowel de Project URL als de Anon Key in.');
+    return;
+  }
   localStorage.setItem('iv_sb_url', url);
   localStorage.setItem('iv_sb_key', key);
+  updateSbStatusPill('bezig');
+
   await loadSupabaseSDK();
+  console.log('Supabase SDK beschikbaar:', !!(window.supabase || window.supabaseJs));
+
   const ok = SB.init(url, key);
+  console.log('SB.init resultaat:', ok, 'client:', SB._client);
+
   if (ok) {
     const test = await SB.testVerbinding();
+    console.log('Verbindingstest:', test);
     if (test) {
       updateSbStatusPill('verbonden');
       const okEl = document.getElementById('sb-ok');
-      okEl.style.display='inline'; setTimeout(()=>okEl.style.display='none',2000);
+      okEl.style.display='inline'; setTimeout(()=>okEl.style.display='none',3000);
     } else {
       updateSbStatusPill('fout');
+      alert('Supabase bereikbaar maar kan geen data ophalen. Check je URL en key.');
     }
   } else {
     updateSbStatusPill('fout');
+    alert('Supabase SDK kon niet initialiseren. Zie console (F12) voor details.');
   }
 }
 
@@ -1339,7 +1367,7 @@ function getApiSettings() {
   };
 }
 
-function saveApiSettings() {
+async function saveApiSettings() {
   const provider  = document.getElementById('api-provider').value;
   const apiKey    = document.getElementById('api-key-input').value.trim();
   const workerUrl = document.getElementById('api-worker-url').value.trim();
@@ -1348,13 +1376,26 @@ function saveApiSettings() {
   localStorage.setItem('iv_api_key',    apiKey);
   localStorage.setItem('iv_worker_url', workerUrl);
   localStorage.setItem('iv_model',      model);
-  // Sla alles op in Supabase inclusief api key
-  SB.saveApiInstellingen(provider, model, workerUrl, apiKey);
+
+  // Zorg dat Supabase verbonden is voordat we opslaan
+  if (!SB.ok) {
+    console.log('Supabase nog niet actief — opnieuw initialiseren...');
+    await initSupabase();
+  }
+
+  // Sla op in Supabase
+  if (SB.ok) {
+    await SB.saveApiInstellingen(provider, model, workerUrl, apiKey);
+    console.log('✓ API instellingen opgeslagen in Supabase');
+  } else {
+    console.warn('Supabase niet beschikbaar — alleen lokaal opgeslagen');
+  }
+
   const ok = document.getElementById('api-settings-ok');
   ok.style.display='inline'; setTimeout(()=>ok.style.display='none', 2000);
   updateModelOptions();
   updateApiStatusPill();
-  // Start intake if chat is still empty
+  // Start intake als chat nog leeg is
   if (document.getElementById('ichat').children.length === 0) {
     switchTab('intake');
     startIntake();
