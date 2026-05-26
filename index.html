@@ -734,10 +734,47 @@ const SB = {
 
   // ── API instellingen (inclusief api key) ──
   async saveApiInstellingen(provider, model, workerUrl, apiKey) {
+    console.log('saveApiInstellingen aangeroepen, SB.ok:', this.ok, 'client:', !!this._client);
     if (this.ok) {
-      const { error } = await this._client.from('api_instellingen')
-        .upsert({ id: 'global', provider, model, worker_url: workerUrl, api_key: apiKey }, { onConflict: 'id' });
-      if (error) console.error('SB saveApiInstellingen:', error);
+      const row = { id: 'global', provider, model, worker_url: workerUrl, api_key: apiKey };
+      console.log('Opslaan naar api_instellingen:', {...row, api_key: '***'});
+      const { data, error } = await this._client.from('api_instellingen')
+        .upsert(row, { onConflict: 'id' });
+      if (error) {
+        console.error('SB saveApiInstellingen fout:', JSON.stringify(error));
+        // Fallback: directe REST aanroep
+        await this._directUpsertApiSettings(row);
+      } else {
+        console.log('✓ api_instellingen opgeslagen:', data);
+      }
+    } else {
+      console.warn('SB niet ok, sla op via directe REST...');
+      const sbUrl = localStorage.getItem('iv_sb_url');
+      const sbKey = localStorage.getItem('iv_sb_key');
+      if (sbUrl && sbKey) {
+        await this._directUpsertApiSettings({ id:'global', provider, model, worker_url: workerUrl, api_key: apiKey }, sbUrl, sbKey);
+      }
+    }
+  },
+
+  async _directUpsertApiSettings(row, sbUrl, sbKey) {
+    const url = (sbUrl || localStorage.getItem('iv_sb_url')) + '/rest/v1/api_instellingen';
+    const key = sbKey || localStorage.getItem('iv_sb_key');
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': key,
+          'Authorization': 'Bearer ' + key,
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(row)
+      });
+      const txt = await r.text();
+      console.log('Direct REST upsert status:', r.status, txt);
+    } catch(e) {
+      console.error('Direct REST upsert fout:', e);
     }
   },
 
