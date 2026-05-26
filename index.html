@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ImpactVandaag — Artikel Agents</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g:#1a6b4a;--gl:#e8f4ef;--gm:#2d8a62;
+  --o:#e85d2f;--ol:#fdf0eb;
+  --sand:#f5f2ed;--dark:#1c1c1a;--mut:#6b6b67;
+  --bdr:#e0ddd8;--wht:#ffffff;
+  --rmd:10px;--rlg:16px;--rxl:24px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+
+/* ── SITE SWITCHER ── */
+.site-switcher{display:flex;gap:4px;background:rgba(255,255,255,.08);border-radius:var(--rlg);padding:3px;}
+.site-btn{display:flex;align-items:center;gap:6px;padding:5px 12px;border:none;background:transparent;color:rgba(255,255,255,.6);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;border-radius:var(--rmd);cursor:pointer;transition:all .2s;white-space:nowrap;}
+.site-btn.active{background:rgba(255,255,255,.15);color:#fff;}
+.site-btn:hover:not(.active){color:rgba(255,255,255,.85);}
+.site-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+/* ── SITE THEMES ── */
+body.site-oo{--g:#1a4b9e;--gl:#e8eef8;--gm:#2558b8;--o:#f59e0b;--ol:#fef3c7;}
+body.site-oo header{background:#0f2d5e;}
+body.site-oo .logo span{color:#60a5fa;}
+body.site-oo .adot.done{background:var(--gm);}
+body.site-oo .pfill{background:var(--g);}
+body.site-oo .rbtn,.site-oo .sbtn,.site-oo .saveb,.site-oo .dag-run-btn,.site-oo .bsubmit{background:var(--g);}
+body.site-oo .rbtn:hover,.site-oo .sbtn:hover,.site-oo .saveb:hover,.site-oo .dag-run-btn:hover,.site-oo .bsubmit:hover{background:var(--gm);}
+body.site-oo .tab.active{color:var(--g);border-bottom-color:var(--g);}
+body.site-oo .cmsg .bin{border-radius:4px 14px 14px 14px;}
+body.site-oo .cmsg.u .bin{background:var(--g);}
+body.site-oo .fstep.done{border-color:#b8cbec;background:var(--gl);}
+body.site-oo .dag-badge.ok{background:var(--gl);color:var(--g);border-color:#b8cbec;}
+
+body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--dark);min-height:100vh;font-size:15px;}
+
+header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:#fff;letter-spacing:-.3px;}
+.logo span{color:#5ecfa0;}
+.hbadge{font-size:11px;background:var(--g);color:#fff;padding:3px 10px;border-radius:20px;letter-spacing:.5px;}
+
+.app{display:grid;grid-template-columns:272px 1fr;min-height:calc(100vh - 60px);}
+
+/* SIDEBAR */
+.sidebar{background:var(--wht);border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow-y:auto;}
+.ss{padding:.9rem 1rem;border-bottom:1px solid var(--bdr);}
+.stitle{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:1px;color:var(--mut);margin-bottom:.6rem;}
+
+.apill{display:flex;align-items:center;gap:7px;padding:8px 9px;border-radius:var(--rmd);border:1px solid var(--bdr);background:var(--sand);margin-bottom:5px;cursor:pointer;transition:all .15s;position:relative;}
+.apill:hover{border-color:var(--gm);background:var(--gl);}
+.aemoji{font-size:15px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:var(--wht);border-radius:6px;border:1px solid var(--bdr);flex-shrink:0;}
+.ameta{flex:1;min-width:0;}
+.aname{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.arole{font-size:10px;color:var(--mut);}
+.adot{width:7px;height:7px;border-radius:50%;background:#d0cdc8;flex-shrink:0;transition:background .3s;}
+.adot.thinking{background:#e8a530;animation:blink .9s ease-in-out infinite;}
+.adot.done{background:var(--gm);}
+.adot.active{background:var(--g);}
+.adot.warn{background:var(--o);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.ehint{font-size:10px;color:var(--gm);background:var(--wht);border:1px solid var(--bdr);border-radius:5px;padding:1px 5px;opacity:0;transition:opacity .15s;flex-shrink:0;}
+.apill:hover .ehint{opacity:1;}
+
+.tone-row{display:flex;gap:4px;flex-wrap:wrap;}
+.tbtn{font-size:11px;padding:4px 8px;border-radius:20px;border:1px solid var(--bdr);background:var(--sand);color:var(--mut);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;}
+.tbtn.active{background:var(--gl);border-color:var(--g);color:var(--g);}
+
+.sbot{padding:1rem;margin-top:auto;}
+.nbtn{width:100%;padding:10px;background:var(--sand);color:var(--mut);font-family:'DM Sans',sans-serif;font-size:13px;border:1px solid var(--bdr);border-radius:var(--rmd);cursor:pointer;transition:all .15s;}
+.nbtn:hover{border-color:var(--g);color:var(--g);background:var(--gl);}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;overflow:hidden;height:calc(100vh - 60px);}
+.tabs{background:var(--wht);border-bottom:1px solid var(--bdr);display:flex;padding:0 1.2rem;flex-shrink:0;overflow-x:auto;}
+.tab{padding:12px 14px 10px;font-size:13px;font-weight:500;color:var(--mut);border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;margin-bottom:-1px;white-space:nowrap;}
+.tab:hover{color:var(--dark);}
+.tab.active{color:var(--g);border-bottom-color:var(--g);}
+.tnew{display:inline-block;background:var(--o);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:3px;vertical-align:middle;}
+
+.panel{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.panel.active{display:flex;}
+
+/* ── INTAKE ── */
+#panel-intake{flex-direction:column;}
+.ichat{flex:1;overflow-y:auto;padding:1.2rem;display:flex;flex-direction:column;gap:10px;}
+.cmsg{display:flex;gap:9px;align-items:flex-start;animation:fup .22s ease;}
+@keyframes fup{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.cmsg.u{flex-direction:row-reverse;}
+.cav{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:1px solid var(--bdr);background:var(--wht);}
+.cmsg.u .cav{background:var(--g);border-color:var(--g);font-size:11px;color:#fff;font-weight:500;}
+.cbub{max-width:78%;}
+.cmsg.u .cbub{align-items:flex-end;display:flex;flex-direction:column;}
+.bin{background:var(--wht);border:1px solid var(--bdr);border-radius:4px 14px 14px 14px;padding:9px 13px;font-size:13px;line-height:1.65;color:var(--dark);}
+.cmsg.u .bin{background:var(--g);color:#fff;border-color:var(--g);border-radius:14px 4px 14px 14px;}
+.bmeta{font-size:10px;color:var(--mut);margin-top:3px;padding:0 4px;}
+.cmsg.u .bmeta{text-align:right;}
+.typing-bub .bin{color:var(--mut);font-style:italic;}
+.tdots::after{content:'';animation:td 1.2s steps(4) infinite;}
+@keyframes td{0%{content:'.'}33%{content:'..'}66%{content:'...'}100%{content:''}}
+
+.iprog{padding:7px 1.2rem;background:var(--wht);border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.plabel{font-size:11px;color:var(--mut);white-space:nowrap;}
+.pbar{flex:1;height:4px;background:var(--bdr);border-radius:4px;overflow:hidden;}
+.pfill{height:100%;background:var(--g);border-radius:4px;transition:width .5s ease;}
+.ppct{font-size:11px;color:var(--g);font-weight:500;min-width:30px;text-align:right;}
+.rbtn{font-size:12px;padding:5px 11px;background:var(--g);color:#fff;border:none;border-radius:20px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;white-space:nowrap;}
+.rbtn:hover{background:var(--gm);}
+.rbtn:disabled{background:#bbb;cursor:not-allowed;}
+
+.irow{padding:.9rem 1.2rem;background:var(--wht);border-top:1px solid var(--bdr);display:flex;gap:8px;flex-shrink:0;}
+.iinput{flex:1;padding:9px 13px;border:1px solid var(--bdr);border-radius:var(--rmd);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--dark);background:var(--sand);transition:border-color .15s;resize:none;min-height:42px;max-height:110px;}
+.iinput:focus{outline:none;border-color:var(--g);background:#fff;}
+.sbtn{padding:9px 16px;background:var(--g);color:#fff;border:none;border-radius:var(--rmd);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;transition:background .15s;align-self:flex-end;}
+.sbtn:hover{background:var(--gm);}
+.sbtn:disabled{background:#bbb;cursor:not-allowed;}
+
+/* ── URL CHIPS ── */
+.url-chips{display:flex;flex-wrap:wrap;gap:5px;padding:.5rem 1.2rem 0;background:var(--wht);}
+.url-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;background:var(--gl);color:var(--g);border:1px solid #b8deca;border-radius:20px;padding:3px 8px 3px 10px;max-width:260px;}
+.url-chip-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.url-chip-rm{cursor:pointer;font-size:13px;line-height:1;color:var(--gm);flex-shrink:0;}
+.url-chip-rm:hover{color:var(--o);}
+
+/* ── DAGELIJKS ── */
+#panel-dagelijks{overflow-y:auto;flex-direction:column;}
+.dag-wrap{padding:1.2rem;display:flex;flex-direction:column;gap:.9rem;}
+.dag-card{background:var(--wht);border:1px solid var(--bdr);border-radius:var(--rxl);overflow:hidden;}
+.dag-card-head{display:flex;align-items:center;gap:10px;padding:1rem 1.2rem;flex-wrap:wrap;}
+.dag-card-inner-head{display:flex;align-items:center;gap:7px;padding:.8rem 1rem .5rem;flex-wrap:wrap;}
+.dag-run-btn{margin-left:auto;padding:9px 18px;background:var(--g);color:#fff;border:none;border-radius:var(--rmd);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.dag-run-btn:hover{background:var(--gm);}
+.dag-run-btn:disabled{background:#aaa;cursor:not-allowed;}
+.dag-badge{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px;background:var(--sand);color:var(--mut);border:1px solid var(--bdr);}
+.dag-badge.ok{background:var(--gl);color:var(--g);border-color:#b8deca;}
+.dag-badge.warn{background:#fff8ec;color:#b86a10;border-color:#e8c07a;}
+.dag-output{font-size:12px;line-height:1.65;color:var(--dark);background:var(--sand);border-radius:var(--rmd);padding:10px 12px;margin:.2rem .8rem .8rem;border:1px solid var(--bdr);white-space:pre-wrap;max-height:200px;overflow-y:auto;}
+.dag-prog-steps{display:flex;flex-direction:column;gap:6px;padding:.8rem 1.2rem 1rem;}
+.dag-step-row{display:flex;align-items:center;gap:8px;font-size:12px;}
+.dag-step-dot{width:8px;height:8px;border-radius:50%;background:#d0cdc8;flex-shrink:0;transition:background .3s;}
+.dag-step-dot.run{background:#e8a530;animation:blink .9s ease-in-out infinite;}
+.dag-step-dot.ok{background:var(--gm);}
+.dag-step-dot.skip{background:#d0cdc8;}
+.dag-hist-item{border:1px solid var(--bdr);border-radius:var(--rmd);padding:9px 12px;display:flex;align-items:flex-start;gap:8px;cursor:pointer;transition:border-color .15s;}
+.dag-hist-item:hover{border-color:var(--gm);}
+.dag-hist-meta{flex:1;min-width:0;}
+.dag-hist-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dag-hist-sub{font-size:11px;color:var(--mut);margin-top:2px;}
+.dag-hist-type{font-size:10px;padding:2px 7px;border-radius:10px;flex-shrink:0;}
+.dag-hist-type.nieuws{background:#e8f0fe;color:#1a4b8a;border:1px solid #b8cef4;}
+.dag-hist-type.evergreen{background:var(--gl);color:var(--g);border:1px solid #b8deca;}
+
+/* ── DAGELIJKS ── */
+.dl-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:var(--sand);color:var(--dark);border:1px solid var(--bdr);border-radius:var(--rmd);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;text-decoration:none;}
+.dl-btn:hover{border-color:var(--g);color:var(--g);background:var(--gl);}
+.dl-btn.primary{background:var(--gl);color:var(--g);border-color:var(--g);}
+.dl-btn.primary:hover{background:var(--g);color:#fff;}
+#panel-workflow{overflow-y:auto;padding:1.2rem;gap:.7rem;flex-direction:column;}
+.fhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.2rem;}
+.ftitle{font-family:'Fraunces',serif;font-size:19px;font-weight:300;}
+.fstat{font-size:11px;color:var(--mut);}
+.fstep{background:var(--wht);border:1px solid var(--bdr);border-radius:var(--rxl);padding:1rem 1.1rem;transition:border-color .3s,background .3s;}
+.fstep.act{border-color:var(--g);}
+.fstep.done{border-color:#b8deca;background:var(--gl);}
+.fstep.waiting{opacity:.55;}
+.shd{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.snum{width:24px;height:24px;border-radius:50%;background:var(--sand);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--mut);flex-shrink:0;}
+.fstep.done .snum{background:var(--g);color:#fff;border-color:var(--g);}
+.san{font-weight:500;font-size:13px;flex:1;}
+.sbadge{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--sand);color:var(--mut);border:1px solid var(--bdr);}
+.fstep.act .sbadge{background:#fff8ec;color:#b86a10;border-color:#e8c07a;}
+.fstep.done .sbadge{background:#e8f4ef;color:var(--g);border-color:#b8deca;}
+.ssub{font-size:10px;color:var(--mut);margin-bottom:5px;}
+.sout{font-size:12px;line-height:1.6;color:var(--dark);background:var(--sand);border-radius:var(--rmd);padding:9px 11px;min-height:40px;border:1px solid var(--bdr);white-space:pre-wrap;max-height:340px;overflow-y:auto;}
+.sout.m{color:var(--mut);font-style:italic;}
+.fcon{text-align:center;color:var(--bdr);font-size:15px;line-height:1;margin:1px 0;}
+
+/* Source list inside researcher step */
+.src-list{margin-top:6px;display:flex;flex-direction:column;gap:4px;}
+.src-item{font-size:11px;background:var(--wht);border:1px solid var(--bdr);border-radius:6px;padding:5px 9px;display:flex;gap:6px;align-items:baseline;}
+.src-tag{color:var(--gm);font-weight:500;flex-shrink:0;}
+.src-txt{color:var(--dark);line-height:1.4;}
+
+/* ── ARTIKEL ── */
+#panel-artikel{overflow-y:auto;padding:0;flex-direction:column;gap:0;}
+.art-scroll{flex:1;overflow-y:auto;padding:1.2rem;display:flex;flex-direction:column;gap:.8rem;}
+.abox{background:var(--wht);border:1px solid var(--bdr);border-radius:var(--rxl);padding:1.8rem;}
+.abox h1{font-family:'Fraunces',serif;font-size:25px;font-weight:600;line-height:1.3;margin-bottom:.7rem;}
+.abox h2{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin:1.3rem 0 .5rem;}
+.abox p{line-height:1.8;color:#3d3d3a;margin-bottom:.85rem;}
+.aempty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mut);gap:8px;text-align:center;padding:2rem;}
+.cbtn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:var(--gl);color:var(--g);border:1px solid var(--g);border-radius:var(--rmd);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.cbtn:hover{background:var(--g);color:#fff;}
+
+/* ── BEOORDELING ── */
+#panel-beoordeling{overflow-y:auto;padding:1.2rem;flex-direction:column;gap:.9rem;}
+.beoo-intro{background:var(--wht);border:1px solid var(--bdr);border-radius:var(--rxl);padding:1.4rem;}
+.beoo-intro h2{font-family:'Fraunces',serif;font-size:18px;font-weight:300;margin-bottom:.5rem;}
+.stars{display:flex;gap:6px;margin:.8rem 0;}
+.star{font-size:24px;cursor:pointer;transition:transform .15s;filter:grayscale(1);opacity:.35;}
+.star.on{filter:none;opacity:1;}
+.star:hover{transform:scale(1.2);}
+.beoo-cats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:.8rem 0;}
+.bcat{background:var(--sand);border:1px solid var(--bdr);border-radius:var(--rmd);padding:10px;display:flex;flex-direction:column;gap:5px;}
+.bcat-lbl{font-size:11px;color:var(--mut);font-weight:500;}
+.bcat-stars{display:flex;gap:3px;}
+.bcat-star{font-size:16px;cursor:pointer;filter:grayscale(1);opacity:.4;transition:all .12s;}
+.bcat-star.on{filter:none;opacity:1;}
+.btext{width:100%;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--rmd);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dark);background:var(--sand);resize:vertical;min-height:90px;line-height:1.6;transition:border-color .15s;}
+.btext:focus{outline:none;border-color:var(--g);background:#fff;}
+.bsubmit{padding:10px 22px;background:var(--g);color:#fff;border:none;border-radius:var(--rmd);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s;}
+.bsubmit:hover{background:var(--gm);}
+.bsubmit:disabled{background:#bbb;cursor:not-allowed;}
+
+.bregen-result{background:var(--wht);border:1px solid var(--bdr);border-radius:var(--rxl);padding:1.4rem;}
+.bregen-result h3{font-family:'Fraunces',serif;font-size:16px;font-weight:300;color:var(--mut);margin-bottom:.8rem;}
+.agent-feedback-row{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--bdr);}
+.agent-feedback-row:last-child{border-bottom:none;}
+.af-emoji{font-size:16px;width:28px;flex-shrink:0;text-align:center;margin-top:2px;}
+.af-body{flex:1;}
+.af-name{font-size:12px;font-weight:500;margin-bottom:3px;}
+.af-action{font-size:12px;color:var(--mut);line-height:1.5;}
+.af-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--bdr);margin-left:6px;}
+.af-badge.update{background:#fff8ec;color:#b86a10;border-color:#e8c07a;}
+.af-badge.skip{background:var(--sand);color:var(--mut);}
+.af-badge.extra{background:var(--gl);color:var(--g);border-color:#b8deca;}
+
+/* ── CONFIG ── */
+#panel-config{overflow-y:auto;padding:1.2rem;flex-direction:column;gap:.9rem;}
+.chint{background:var(--ol);border:1px solid #f0c4aa;border-radius:var(--rmd);padding:9px 13px;font-size:12px;color:#8a3a18;line-height:1.6;}
+.ccard{background:var(--wht);border:1px solid var(--bdr);border-radius:var(--rxl);overflow:hidden;}
+.cchead{display:flex;align-items:center;gap:10px;padding:.85rem 1.1rem;border-bottom:1px solid var(--bdr);background:var(--sand);}
+.ccbody{padding:1rem 1.1rem;display:flex;flex-direction:column;gap:9px;}
+.flbl{font-size:10px;font-weight:500;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.finp{width:100%;padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--rmd);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dark);background:var(--sand);transition:border-color .15s;}
+.finp:focus{outline:none;border-color:var(--g);background:#fff;}
+.fta{width:100%;padding:9px 10px;border:1px solid var(--bdr);border-radius:var(--rmd);font-family:'DM Sans',sans-serif;font-size:12px;color:var(--dark);background:var(--sand);resize:vertical;min-height:120px;line-height:1.6;transition:border-color .15s;}
+.fta:focus{outline:none;border-color:var(--g);background:#fff;}
+.frow{display:grid;grid-template-columns:1fr 76px;gap:8px;}
+.saveb{padding:7px 15px;background:var(--g);color:#fff;border:none;border-radius:var(--rmd);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s;}
+.saveb:hover{background:var(--gm);}
+.saok{font-size:11px;color:var(--g);display:none;}
+.rlink{font-size:11px;color:var(--mut);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" id="site-logo">Impact<span id="logo-span">Vandaag</span></div>
+  <div class="site-switcher" id="site-switcher">
+    <button class="site-btn active" data-site="iv" onclick="switchSite('iv')">
+      <span class="site-dot" style="background:#5ecfa0"></span> ImpactVandaag
+    </button>
+    <button class="site-btn" data-site="oo" onclick="switchSite('oo')">
+      <span class="site-dot" style="background:#3b82f6"></span> OpdrachtOverheid
+    </button>
+  </div>
+  <span class="hbadge" id="site-badge">Artikel Agents</span>
+</header>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="ss">
+    <div class="stitle">Agents (6)</div>
+    <div id="sb-agents"></div>
+  </div>
+  <div class="ss">
+    <div class="stitle" style="margin-bottom:.4rem">Toon artikel</div>
+    <div class="tone-row" id="tone-row">
+      <button class="tbtn active" data-tone="professioneel inspirerend">Inspirerend</button>
+      <button class="tbtn" data-tone="informatief zakelijk">Informatief</button>
+      <button class="tbtn" data-tone="persoonlijk en authentiek">Persoonlijk</button>
+      <button class="tbtn" data-tone="prikkelend en to-the-point">Prikkelend</button>
+    </div>
+  </div>
+  <div class="ss">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+      <div class="stitle" style="margin-bottom:0">Woordenaantal</div>
+      <span id="wc-display" style="font-size:13px;font-weight:500;color:var(--g)">600</span>
+    </div>
+    <input type="range" id="wc-slider" min="300" max="2000" step="50" value="600"
+      style="width:100%;accent-color:var(--g);cursor:pointer"
+      oninput="updateWordCount(this.value)">
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      <span style="font-size:10px;color:var(--mut)">300</span>
+      <span style="font-size:10px;color:var(--mut)">1000</span>
+      <span style="font-size:10px;color:var(--mut)">2000</span>
+    </div>
+  </div>
+  <div class="sbot">
+    <button class="nbtn" onclick="resetAll()">↩ Nieuw artikel starten</button>
+  </div>
+</aside>
+
+<main class="main">
+  <nav class="tabs">
+    <div class="tab active" data-tab="intake">💬 Intake</div>
+    <div class="tab" data-tab="workflow">Workflow</div>
+    <div class="tab" data-tab="artikel">Artikel</div>
+    <div class="tab" data-tab="beoordeling">⭐ Beoordeling</div>
+    <div class="tab" data-tab="dagelijks">📅 Dagelijks</div>
+    <div class="tab" data-tab="config">Configureer</div>
+  </nav>
+
+  <!-- INTAKE -->
+  <div class="panel active" id="panel-intake">
+    <div class="ichat" id="ichat"></div>
+    <div class="iprog">
+      <span class="plabel">Volledigheid briefing</span>
+      <div class="pbar"><div class="pfill" id="pfill" style="width:0%"></div></div>
+      <span class="ppct" id="ppct">0%</span>
+      <button class="rbtn" id="rdy-btn" onclick="launchAgents()" disabled>→ Genereer artikel</button>
+    </div>
+    <div class="url-chips" id="url-chips" style="display:none"></div>
+    <div class="irow">
+      <textarea class="iinput" id="iinput" placeholder="Typ je antwoord of plak een URL (https://...)..." rows="1" onkeydown="handleKey(event)" oninput="detectUrl(this)"></textarea>
+      <button class="sbtn" id="snd-btn" onclick="sendMsg()">Stuur</button>
+    </div>
+  </div>
+
+  <!-- WORKFLOW -->
+  <div class="panel" id="panel-workflow">
+    <div class="fhdr">
+      <div class="ftitle">Agent Workflow</div>
+      <div class="fstat" id="fstat">Wacht op intake...</div>
+    </div>
+    <div id="fsteps"></div>
+  </div>
+
+  <!-- ARTIKEL -->
+  <div class="panel" id="panel-artikel">
+    <div class="art-scroll">
+    <div class="aempty" id="aempty">
+      <div style="font-size:36px;opacity:.3">📄</div>
+      <div style="font-size:14px">Het artikel verschijnt hier zodra alle agents klaar zijn.</div>
+    </div>
+    <div id="acontent" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- BEOORDELING -->
+  <div class="panel" id="panel-beoordeling">
+    <div class="beoo-intro">
+      <h2>Beoordeel het artikel</h2>
+      <p style="font-size:13px;color:var(--mut);line-height:1.6">Geef je feedback. De agents passen hun aanpak aan en genereren een verbeterde versie.</p>
+
+      <div style="margin-top:1rem">
+        <div class="flbl">Algemene score</div>
+        <div class="stars" id="stars">
+          <span class="star" data-v="1">⭐</span>
+          <span class="star" data-v="2">⭐</span>
+          <span class="star" data-v="3">⭐</span>
+          <span class="star" data-v="4">⭐</span>
+          <span class="star" data-v="5">⭐</span>
+        </div>
+      </div>
+
+      <div class="beoo-cats" id="beoo-cats">
+        <div class="bcat">
+          <div class="bcat-lbl">Toon & stijl</div>
+          <div class="bcat-stars" data-cat="toon">
+            <span class="bcat-star" data-v="1">⭐</span><span class="bcat-star" data-v="2">⭐</span><span class="bcat-star" data-v="3">⭐</span><span class="bcat-star" data-v="4">⭐</span><span class="bcat-star" data-v="5">⭐</span>
+          </div>
+        </div>
+        <div class="bcat">
+          <div class="bcat-lbl">Inhoud & diepgang</div>
+          <div class="bcat-stars" data-cat="inhoud">
+            <span class="bcat-star" data-v="1">⭐</span><span class="bcat-star" data-v="2">⭐</span><span class="bcat-star" data-v="3">⭐</span><span class="bcat-star" data-v="4">⭐</span><span class="bcat-star" data-v="5">⭐</span>
+          </div>
+        </div>
+        <div class="bcat">
+          <div class="bcat-lbl">Menselijkheid</div>
+          <div class="bcat-stars" data-cat="menselijkheid">
+            <span class="bcat-star" data-v="1">⭐</span><span class="bcat-star" data-v="2">⭐</span><span class="bcat-star" data-v="3">⭐</span><span class="bcat-star" data-v="4">⭐</span><span class="bcat-star" data-v="5">⭐</span>
+          </div>
+        </div>
+        <div class="bcat">
+          <div class="bcat-lbl">Call-to-action</div>
+          <div class="bcat-stars" data-cat="cta">
+            <span class="bcat-star" data-v="1">⭐</span><span class="bcat-star" data-v="2">⭐</span><span class="bcat-star" data-v="3">⭐</span><span class="bcat-star" data-v="4">⭐</span><span class="bcat-star" data-v="5">⭐</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:.8rem">
+        <div class="flbl" style="margin-bottom:5px">Specifieke feedback &amp; wensen voor verbetering</div>
+        <textarea class="btext" id="btext" placeholder="Bijv: de toon mag persoonlijker, voeg een concreet overheidsvoorbeeld toe, de opening is te algemeen..."></textarea>
+      </div>
+
+      <button class="bsubmit" id="bsubmit" onclick="submitBeoordeling()" style="margin-top:.8rem">↺ Regenereer op basis van feedback</button>
+    </div>
+
+    <div class="bregen-result" id="bregen-plan" style="display:none">
+      <h3>Wat de agents gaan doen</h3>
+      <div id="bregen-actions"></div>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--bdr);">
+        <button class="bsubmit" id="bregen-go" onclick="regenAgents()">▶ Start verbetering</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAGELIJKS -->
+  <div class="panel" id="panel-dagelijks">
+    <div class="dag-wrap">
+
+      <!-- Status header -->
+      <div class="dag-card" id="dag-status-card">
+        <div class="dag-card-head">
+          <span style="font-size:20px">📅</span>
+          <div>
+            <div style="font-weight:500;font-size:14px">Dagelijkse Artikel Generator</div>
+            <div style="font-size:11px;color:var(--mut)">Laatste run: <span id="dag-last-run">Nog nooit gedraaid</span></div>
+          </div>
+          <button class="dag-run-btn" id="dag-run-btn" onclick="startDagelijkseRun()">▶ Start dagelijkse run</button>
+        </div>
+        <div id="dag-mail-row" style="display:none;align-items:center;gap:8px;padding:.6rem 1.2rem;border-top:1px solid var(--bdr);background:var(--sand)">
+          <span style="font-size:12px;color:var(--mut)">Artikel klaar —</span>
+          <button onclick="mailNaarJan()" style="font-size:12px;padding:5px 12px;background:#fff8ec;border:1px solid #e8a530;color:#7a4e0a;border-radius:var(--rmd);cursor:pointer;font-family:'DM Sans',sans-serif">✉ Mail naar jan.devries@kbenp.nl</button>
+          <button onclick="switchTab('artikel')" style="font-size:12px;padding:5px 12px;background:var(--gl);border:1px solid var(--g);color:var(--g);border-radius:var(--rmd);cursor:pointer;font-family:'DM Sans',sans-serif">→ Bekijk artikel</button>
+        </div>
+        <div class="dag-progress" id="dag-progress" style="display:none">
+          <div class="dag-prog-steps" id="dag-prog-steps"></div>
+        </div>
+      </div>
+
+      <!-- Nieuws agent output -->
+      <div class="dag-card" id="dag-nieuws-card" style="display:none">
+        <div class="dag-card-inner-head">
+          <span>📰</span><span style="font-weight:500;font-size:13px">Nieuws Agent — gevonden relevante updates</span>
+          <span class="dag-badge" id="dag-nieuws-badge">Zoeken...</span>
+        </div>
+        <div class="dag-output" id="dag-nieuws-out">Bezig met scannen...</div>
+        <div id="dag-beslissing" style="display:none;margin-top:.7rem;padding:.7rem;background:var(--sand);border-radius:var(--rmd);border:1px solid var(--bdr)">
+          <span id="dag-beslissing-icon" style="font-size:14px"></span>
+          <span id="dag-beslissing-txt" style="font-size:13px;margin-left:6px"></span>
+        </div>
+      </div>
+
+      <!-- Onderwerp selectie -->
+      <div class="dag-card" id="dag-onderwerp-card" style="display:none">
+        <div class="dag-card-inner-head">
+          <span>🎯</span><span style="font-weight:500;font-size:13px">Gekozen onderwerp voor vandaag</span>
+        </div>
+        <div class="dag-output" id="dag-onderwerp-out" style="font-size:13px;line-height:1.6"></div>
+      </div>
+
+      <!-- Artikel geschiedenis -->
+      <div class="dag-card" id="dag-history-card">
+        <div class="dag-card-inner-head">
+          <span>🗂️</span>
+          <span style="font-weight:500;font-size:13px">Geschreven artikelen</span>
+          <span id="dag-art-count" style="font-size:11px;color:var(--mut);margin-left:auto"></span>
+          <button onclick="clearHistory()" style="font-size:11px;color:var(--mut);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;margin-left:8px">Wis alles</button>
+        </div>
+        <div id="dag-history-list" style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem">
+          <div style="font-size:12px;color:var(--mut);font-style:italic;padding:4px 0">Nog geen artikelen gegenereerd.</div>
+        </div>
+      </div>
+
+      <!-- Onderwerp blacklist -->
+      <div class="dag-card">
+        <div class="dag-card-inner-head">
+          <span>🚫</span><span style="font-weight:500;font-size:13px">Vermijd deze onderwerpen</span>
+          <span style="font-size:11px;color:var(--mut);margin-left:6px">(automatisch gevuld, handmatig aan te passen)</span>
+        </div>
+        <textarea id="dag-blacklist" class="fta" style="min-height:80px;margin-top:.5rem;font-size:12px" placeholder="Onderwerpen gescheiden door enter..."></textarea>
+        <button class="saveb" style="margin-top:.5rem;font-size:12px;padding:6px 12px" onclick="saveBlacklist()">Opslaan</button>
+        <span id="dag-bl-ok" style="font-size:11px;color:var(--g);display:none;margin-left:8px">✓ Opgeslagen</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="panel" id="panel-config">
+    <div class="chint">💡 Pas elke agent aan per website. Wijzigingen worden direct opgeslagen.</div>
+    <div class="cfg-card" style="margin-bottom:0">
+      <div class="cchead">
+        <span style="font-size:20px" id="cfg-site-icon">🌐</span>
+        <div>
+          <div style="font-weight:500;font-size:14px" id="cfg-site-name">Website instellingen</div>
+          <div style="font-size:11px;color:var(--mut)" id="cfg-site-sub">Toon, jargon en stijl per site</div>
+        </div>
+      </div>
+      <div class="ccbody">
+        <div>
+          <div class="flbl">Website naam (voor agents)</div>
+          <input class="finp" id="cfg-sitename" placeholder="bijv. impactvandaag.nl">
+        </div>
+        <div>
+          <div class="flbl">Doelgroep omschrijving</div>
+          <input class="finp" id="cfg-doelgroep" placeholder="bijv. Ervaren professionals, 5+ jaar werkervaring, overwegen overheidswerk">
+        </div>
+        <div>
+          <div class="flbl">Jargon &amp; merkwoorden <span style="color:var(--mut);font-weight:400">(één per regel — agents gebruiken deze termen actief)</span></div>
+          <textarea class="fta" id="cfg-jargon" style="min-height:110px" placeholder="bijv:&#10;detachering&#10;in loondienst via impactvandaag&#10;Wet toelating terbeschikkingstelling (WTZA)&#10;ABU CAO&#10;maatschappelijke impact&#10;overheidsopdrachtgever"></textarea>
+        </div>
+        <div>
+          <div class="flbl">Verboden woorden &amp; zinnen <span style="color:var(--mut);font-weight:400">(agents vermijden deze altijd)</span></div>
+          <textarea class="fta" id="cfg-verboden" style="min-height:80px" placeholder="bijv:&#10;maak het verschil&#10;zinvol werk&#10;bovendien&#10;daarnaast"></textarea>
+        </div>
+        <div>
+          <div class="flbl">Tone of voice beschrijving</div>
+          <textarea class="fta" id="cfg-tov" style="min-height:70px" placeholder="bijv: Zakelijk maar menselijk. Geen hype. Concrete feiten. Spreekt professionals aan als gelijken."></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="saveb" onclick="saveSiteConfig()">Opslaan website-instellingen</button>
+          <span id="cfg-site-ok" style="font-size:11px;color:var(--g);display:none">✓ Opgeslagen!</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin:.8rem 0 .4rem;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.8px;color:var(--mut)">Agent prompts</div>
+    <div id="cgrid"></div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ═══════════ SITE CONFIGS ═══════════
+const SITE_DEFAULTS = {
+  iv: {
+    name: 'ImpactVandaag',
+    domain: 'impactvandaag.nl',
+    logoSpan: 'Vandaag',
+    doelgroep: 'Ervaren professionals, 5+ jaar werkervaring, die in loondienst bij de overheid willen werken via impactvandaag.nl',
+    jargon: 'detachering\nin loondienst via impactvandaag\nWet toelating terbeschikkingstelling (WTZA)\nABU CAO\nStiPP pensioen\narbeidsonzekerheid\nmaatschappelijke relevantie\noverheidsopdrachtgever\nvaste werkgever\nbegeleid in loondienst',
+    verboden: 'maak het verschil\nzinvol werk\nbovendien\ndaarnaast\nvervullen\nontdek hoe\nin een wereld waar\nhet is belangrijk dat',
+    tov: 'Warm maar professioneel. Spreekt professionals aan als gelijken die een serieuze loopbaankeuze maken. Concrete feiten, geen hype. Persoonlijk maar niet informeel.',
+    accentColor: '#5ecfa0',
+    headerBg: '#1c1c1a',
+    badgeText: 'Artikel Agents'
+  },
+  oo: {
+    name: 'OpdrachtOverheid',
+    domain: 'opdrachtoverheid.nl',
+    logoSpan: 'Overheid',
+    doelgroep: 'ZZP\'ers, freelancers en interim professionals die overheidsopdrachten willen uitvoeren via opdrachtoverheid.nl. Zelfstandig, resultaatgericht, zakelijk.',
+    jargon: 'inhuuropdracht\naanbesteding\nEuropees aanbesteed\nDAS (Dynamisch Aankoopsysteem)\nraamovereenkomst\nmanifestgemeenten\nRijk, provincie of gemeente\ntarief per uur\ninschrijven op een opdracht\nKvK-nummer\nwerkverklaring\nreferentieopdracht\nbijlage bij offerte\ngunningscriteria\nBIGS / OT2\nSimpliCity',
+    verboden: 'in loondienst\ndetachering\nmaak het verschil\nbovendien\ndaarnaast\nontdek hoe\nin een wereld waar',
+    tov: 'Zakelijk, direct en to-the-point. ZZP\'ers hebben geen tijd voor wollige teksten. Schrijf als een vakgenoot die weet hoe aanbesteden werkt. Concrete tips, tarieven en deadlines zijn welkom.',
+    accentColor: '#60a5fa',
+    headerBg: '#0f2d5e',
+    badgeText: 'Artikel Agents'
+  }
+};
+
+// ═══════════ DEFAULT AGENTS — per site ═══════════
+function makeAgents(site) {
+  const s = site === 'oo' ? SITE_DEFAULTS.oo : SITE_DEFAULTS.iv;
+  return [
+  {
+    id:'intake', emoji:'💬', name:'Intake Agent', role:'Briefing interviewer', outputLabel:'Gespreksverslag',
+    systemPrompt:`Je bent de Intake Agent van ${s.domain} — ${s.doelgroep}.
+
+Jouw taak: voer een gericht gesprek om voldoende input te verzamelen voor een sterk artikel. Stel ÉÉN vraag tegelijk. Wees conversationeel, niet als een formulier.
+
+Tone of voice van ${s.name}: ${s.tov}
+
+Relevante onderwerpen om te verkennen:
+- Wat is het kernonderwerp of de kernboodschap?
+- Voor wie schrijven we precies? (welke professionals, welke situatie, welke twijfels)
+- Welke emotie of transformatie moet het artikel teweegbrengen?
+- Zijn er concrete voorbeelden, cases of ervaringen beschikbaar?
+- Wat maakt ${s.domain} uniek voor dit verhaal?
+- Zijn er veelgehoorde bezwaren bij de doelgroep?
+- Is er een gewenste call-to-action?
+
+Na elke reactie eindig je met exact deze JSON op een nieuwe regel:
+SCORE:{"score":X,"ready":false,"summary":"..."}
+- score: 0-100
+- ready: true zodra score >= 75
+- summary: maximaal 2-3 zinnen
+
+Begin met een vriendelijke opening en je eerste vraag.
+Als de gebruiker een URL meestuurt: verwerk de inhoud als extra context.`
+  },
+  {
+    id:'bronnen', emoji:'🌐', name:'Bronnen Agent', role:'Overheids-researcher', outputLabel:'Bronnen & feiten',
+    systemPrompt:`Je bent de Bronnen Agent van ${s.domain}.
+
+Op basis van de intake-briefing zoek je relevante feiten en context voor een artikel gericht aan: ${s.doelgroep}.
+
+Zoek bij: CBS, Rijksoverheid, TenderNed, PIANOo, Binnenlandsbestuur, gemeentelijke sites.
+
+${site === 'oo' ? `Let extra op: aanbestedingsvolumes, DAS-statistieken, marktontwikkelingen voor ZZP'ers bij de overheid, inkoopbeleid.` : `Let extra op: arbeidsmarktcijfers overheid, detacheringsstatistieken, CAO-ontwikkelingen, WTZA-regelgeving.`}
+
+Formaat:
+- Geef 3-6 bronverwijzingen: [BRON] Naam/URL | Citeerbaar feit
+- Sluit af: welke 2-3 feiten zijn het meest waardevol?
+
+Verzin geen URLs.`
+  },
+  {
+    id:'researcher', emoji:'🔍', name:'Researcher', role:'Strategisch anker', outputLabel:'Strategische briefing',
+    systemPrompt:`Je bent contentstrateeg van ${s.domain}.
+
+Doelgroep: ${s.doelgroep}
+Tone of voice: ${s.tov}
+
+Op basis van de intake en bronnen geef je een strategische briefing:
+1. Kernboodschap (1 krachtige zin)
+2. Doelgroep-inzichten: wat speelt er bij deze professionals?
+3. 3-5 argumenten/invalshoeken, versterkt met gevonden bronnen
+4. Context die aansluit bij de propositie van ${s.domain}
+5. Suggestie voor toon, opening en structuur
+
+Schrijf bondig en gericht.`
+  },
+  {
+    id:'writer', emoji:'✍️', name:'Writer', role:'Content creator', outputLabel:'Concept artikel',
+    systemPrompt:`Je bent contentschrijver van ${s.domain}.
+
+Doelgroep: ${s.doelgroep}
+Tone of voice: ${s.tov}
+
+Schrijf een volledig artikel op basis van de intake, bronnen en strategische briefing.
+- Lengte: exact {wordcount} woorden
+- Toon: {tone}
+- Structuur: pakkende kop → engaging intro → 2-3 inhoudelijke paragrafen → afsluiter met CTA richting ${s.domain}
+- Gebruik deze merkwoorden actief (waar passend):
+  ${s.jargon.split('\n').slice(0,8).join(', ')}
+- Vermijd ALTIJD deze woorden/zinnen:
+  ${s.verboden.split('\n').join(', ')}
+- Verwerk concrete feiten en bronverwijzingen subtiel
+- Lever op met <h1>, <h2> en <p> tags`
+  },
+  {
+    id:'reviewer', emoji:'✅', name:'Reviewer', role:'Kwaliteitsredacteur', outputLabel:'Review & verbeterd artikel',
+    systemPrompt:`Je bent redacteur van ${s.domain}.
+
+Beoordeel het concept op:
+1. TOON: Past bij "${s.tov}"?
+2. JARGON: Worden de juiste merkwoorden gebruikt? (${s.jargon.split('\n').slice(0,5).join(', ')})
+3. VERBODEN: Staan er verboden woorden in? (${s.verboden.split('\n').join(', ')})
+4. KWALITEIT: Sterke opening? Concrete inhoud?
+5. CTA: Verwijst het artikel naar ${s.domain}?
+
+Output in twee delen:
+A) FEEDBACKPUNTEN: bullets
+B) Verbeterd artikel — begin altijd met: "===ARTIKEL==="`
+  },
+  {
+    id:'humanizer', emoji:'🧑', name:'Humanizer', role:'Anti-AI schrijver', outputLabel:'Gehumaniseerd artikel',
+    systemPrompt:`Je bent de Humanizer van ${s.domain}. Herschrijf het artikel zodat het klinkt als een echte ${site === 'oo' ? 'vakjournalist die ZZP-ers in de overheidsmarkt kent' : 'journalist die de overheidsarbeidsmarkt kent'} — niet als AI.
+
+Regels:
+1. VERWIJDER opsommingstekens (-, •, *) in doorlopende tekst — herschrijf als zinnen
+2. VERWIJDER: ${s.verboden.split('\n').join(', ')}
+3. VERVANG gladde overgangen door onverwachte, menselijke overgangen
+4. ZORG voor variatie in zinslengte: wissel kort en lang af
+5. VOEG één concreet, specifiek detail toe dat geloofwaardigheid geeft
+6. BEHOUD inhoud, feiten en HTML-structuur volledig
+
+Lever ALLEEN de herschreven tekst, geen toelichting.`
+  }
+  ];
+}
+
+// ═══════════ STATE ═══════════
+let currentSite = localStorage.getItem('iv_current_site') || 'iv';
+
+function getSiteConfig() {
+  const saved = localStorage.getItem('iv_site_cfg_' + currentSite);
+  return saved ? JSON.parse(saved) : {...SITE_DEFAULTS[currentSite]};
+}
+
+function getAgents() {
+  const saved = localStorage.getItem('iv_ag6_' + currentSite);
+  return saved ? JSON.parse(saved) : makeAgents(currentSite);
+}
+
+let agents = getAgents();
+let tone = 'professioneel inspirerend';
+let wordCount = 600;
+let iHist = [];
+let iScore = 0; let iSum = ''; let iReady = false;
+let running = false;
+let OUT = {};
+let catRatings = {};
+let globalRating = 0;
+let regenPlan = [];
+
+function saveAgents(){ localStorage.setItem('iv_ag6_' + currentSite, JSON.stringify(agents)); }
+
+// ═══════════ SITE SWITCHER ═══════════
+function switchSite(site) {
+  if (site === currentSite) return;
+  currentSite = site;
+  localStorage.setItem('iv_current_site', site);
+  agents = getAgents();
+
+  // Update visual theme
+  document.body.className = site === 'oo' ? 'site-oo' : '';
+  const cfg = getSiteConfig();
+  const sd = SITE_DEFAULTS[site];
+
+  // Logo
+  document.querySelector('.logo').childNodes[0].textContent = site === 'oo' ? 'Opdracht' : 'Impact';
+  document.getElementById('logo-span').textContent = sd.logoSpan;
+
+  // Active button
+  document.querySelectorAll('.site-btn').forEach(b => b.classList.toggle('active', b.dataset.site === site));
+
+  // Reset all state
+  iHist=[]; iScore=0; iSum=''; iReady=false; OUT={};
+  globalRating=0; catRatings={}; regenPlan=[];
+  document.querySelectorAll('.star').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.bcat-star').forEach(s=>s.classList.remove('on'));
+  const bt = document.getElementById('btext'); if(bt) bt.value='';
+  const bp = document.getElementById('bregen-plan'); if(bp) bp.style.display='none';
+  document.getElementById('aempty').style.display='flex';
+  document.getElementById('acontent').style.display='none';
+  document.getElementById('fstat').textContent='Wacht op intake...';
+
+  renderSidebar();
+  renderFlow();
+  renderConfig();
+  loadSiteConfigUI();
+  initDagelijks();
+  switchTab('intake');
+  startIntake();
+}
+
+function loadSiteConfigUI() {
+  const cfg = getSiteConfig();
+  const sd = SITE_DEFAULTS[currentSite];
+  document.getElementById('cfg-sitename').value = cfg.domain || sd.domain;
+  document.getElementById('cfg-doelgroep').value = cfg.doelgroep || sd.doelgroep;
+  document.getElementById('cfg-jargon').value = cfg.jargon || sd.jargon;
+  document.getElementById('cfg-verboden').value = cfg.verboden || sd.verboden;
+  document.getElementById('cfg-tov').value = cfg.tov || sd.tov;
+  document.getElementById('cfg-site-name').textContent = (cfg.name || sd.name) + ' — website instellingen';
+  document.getElementById('cfg-site-sub').textContent = cfg.domain || sd.domain;
+  document.getElementById('cfg-site-icon').textContent = currentSite === 'oo' ? '🔷' : '🟢';
+}
+
+function saveSiteConfig() {
+  const cfg = getSiteConfig();
+  cfg.domain = document.getElementById('cfg-sitename').value;
+  cfg.doelgroep = document.getElementById('cfg-doelgroep').value;
+  cfg.jargon = document.getElementById('cfg-jargon').value;
+  cfg.verboden = document.getElementById('cfg-verboden').value;
+  cfg.tov = document.getElementById('cfg-tov').value;
+  localStorage.setItem('iv_site_cfg_' + currentSite, JSON.stringify(cfg));
+
+  // Rebuild agents with new config and save
+  agents = makeAgents(currentSite);
+  // Override with saved per-agent edits if any
+  const savedAgents = localStorage.getItem('iv_ag6_' + currentSite);
+  if (!savedAgents) saveAgents();
+
+  const ok = document.getElementById('cfg-site-ok');
+  ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2000);
+  renderConfig();
+}
+
+// ═══════════ INIT ═══════════
+function init(){
+  // Apply saved site theme on load
+  if(currentSite === 'oo') {
+    document.body.className = 'site-oo';
+    document.querySelector('.logo').childNodes[0].textContent = 'Opdracht';
+    document.getElementById('logo-span').textContent = 'Overheid';
+    document.querySelectorAll('.site-btn').forEach(b => b.classList.toggle('active', b.dataset.site === 'oo'));
+  }
+  renderSidebar(); renderFlow(); renderConfig(); setupTabs(); setupTone(); setupStars();
+  loadSiteConfigUI();
+  initDagelijks();
+  startIntake();
+}
+
+// ═══════════ SIDEBAR ═══════════
+function renderSidebar(){
+  document.getElementById('sb-agents').innerHTML = agents.map((a,i)=>`
+    <div class="apill" onclick="goConfig(${i})">
+      <div class="aemoji">${a.emoji}</div>
+      <div class="ameta"><div class="aname">${a.name}</div><div class="arole">${a.role}</div></div>
+      <div class="adot" id="dot-${a.id}"></div>
+      <span class="ehint">✏</span>
+    </div>`).join('');
+}
+function setDot(id,s){ const d=document.getElementById('dot-'+id); if(d) d.className='adot '+s; }
+
+// ═══════════ TABS ═══════════
+function setupTabs(){
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+}
+function switchTab(n){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===n));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+n));
+}
+function goConfig(i){ switchTab('config'); setTimeout(()=>{ const el=document.getElementById('cfg-'+agents[i].id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },60); }
+
+// ═══════════ TONE ═══════════
+function setupTone(){
+  document.querySelectorAll('.tbtn').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.tbtn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); tone=b.dataset.tone;
+  }));
+}
+
+// ═══════════ WORD COUNT ═══════════
+function updateWordCount(v){
+  wordCount = +v;
+  document.getElementById('wc-display').textContent = v;
+}
+function setupStars(){
+  // Global
+  document.querySelectorAll('#stars .star').forEach(s=>s.addEventListener('click',()=>{
+    globalRating=+s.dataset.v;
+    document.querySelectorAll('#stars .star').forEach(x=>x.classList.toggle('on',+x.dataset.v<=globalRating));
+  }));
+  // Category
+  document.querySelectorAll('.bcat-stars').forEach(row=>{
+    const cat=row.dataset.cat;
+    row.querySelectorAll('.bcat-star').forEach(s=>s.addEventListener('click',()=>{
+      catRatings[cat]=+s.dataset.v;
+      row.querySelectorAll('.bcat-star').forEach(x=>x.classList.toggle('on',+x.dataset.v<=catRatings[cat]));
+    }));
+  });
+}
+
+// ═══════════ INTAKE ═══════════
+function startIntake(){
+  iHist=[]; iScore=0; iSum=''; iReady=false;
+  document.getElementById('ichat').innerHTML='';
+  updateProg(0,false);
+  setDot('intake','thinking');
+  callIntake('Start het gesprek met een vriendelijke begroeting en je eerste vraag.');
+}
+
+function appendMsg(role,txt){
+  const chat=document.getElementById('ichat');
+  const isU=role==='user';
+  const t=new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+  const d=document.createElement('div');
+  d.className='cmsg'+(isU?' u':'');
+  d.innerHTML=`<div class="cav">${isU?'JIJ':agents[0].emoji}</div>
+    <div class="cbub">
+      <div class="bin">${txt.replace(/\n/g,'<br>')}</div>
+      <div class="bmeta">${isU?'Jij':agents[0].name} · ${t}</div>
+    </div>`;
+  chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
+}
+
+function appendTyping(){
+  const chat=document.getElementById('ichat');
+  const d=document.createElement('div');
+  d.className='cmsg typing-bub'; d.id='tind';
+  d.innerHTML=`<div class="cav">${agents[0].emoji}</div>
+    <div class="cbub"><div class="bin"><span class="tdots">Denkt na</span></div></div>`;
+  chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
+}
+function rmTyping(){ const t=document.getElementById('tind'); if(t)t.remove(); }
+
+function updateProg(sc,ready){
+  iScore=sc; iReady=ready;
+  document.getElementById('pfill').style.width=sc+'%';
+  document.getElementById('ppct').textContent=sc+'%';
+  document.getElementById('rdy-btn').disabled=!ready;
+}
+
+async function callIntake(userMsg){
+  const msgs=[...iHist];
+  if(userMsg) msgs.push({role:'user',content:userMsg});
+  appendTyping(); setDot('intake','thinking');
+  document.getElementById('snd-btn').disabled=true;
+  try{
+    const raw=await apiCall(agents[0].systemPrompt, msgs.length?msgs:[{role:'user',content:userMsg}]);
+    const m=raw.match(/SCORE:(\{[^}]+\})/);
+    let disp=raw.replace(/\nSCORE:\{[^}]+\}/,'').trim();
+    if(m){ try{ const p=JSON.parse(m[1]); updateProg(Math.min(100,p.score||0),p.ready||false); if(p.summary) iSum=p.summary; }catch(e){} }
+    rmTyping(); appendMsg('assistant',disp);
+    iHist.push({role:'user',content:userMsg||'Start'});
+    iHist.push({role:'assistant',content:raw});
+    setDot('intake',iReady?'done':'active');
+  }catch(e){ rmTyping(); appendMsg('assistant','⚠️ Fout: '+e.message); setDot('intake','idle'); }
+  document.getElementById('snd-btn').disabled=false;
+  document.getElementById('iinput').focus();
+}
+
+function handleKey(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMsg(); } }
+
+// ═══════════ FLOW STEPS (agents 1-5) ═══════════
+function renderFlow(){
+  const prod=agents.slice(1);
+  document.getElementById('fsteps').innerHTML=prod.map((a,i)=>`
+    ${i>0?'<div class="fcon">↓</div>':''}
+    <div class="fstep waiting" id="fs-${a.id}">
+      <div class="shd">
+        <div class="snum">${i+1}</div>
+        <span style="font-size:15px">${a.emoji}</span>
+        <div class="san">${a.name}</div>
+        <div class="sbadge" id="sb-${a.id}">Wacht</div>
+      </div>
+      <div class="ssub">${a.role} · ${a.outputLabel}</div>
+      <div class="sout m" id="so-${a.id}">Output verschijnt hier...</div>
+      ${a.id==='bronnen'?'<div class="src-list" id="srclist" style="display:none"></div>':''}
+    </div>`).join('');
+}
+
+function setStep(id,state,txt){
+  const s=document.getElementById('fs-'+id);
+  const b=document.getElementById('sb-'+id);
+  const o=document.getElementById('so-'+id);
+  if(!s) return;
+  s.classList.remove('act','done','waiting');
+  if(state==='thinking'){ s.classList.add('act'); b.textContent='Bezig...'; }
+  if(state==='done'){ s.classList.add('done'); b.textContent='Klaar ✓'; }
+  if(state==='idle'){ s.classList.add('waiting'); b.textContent='Wacht'; }
+  if(txt!==undefined){ o.className='sout'+(txt?'':' m'); o.textContent=txt||'Output verschijnt hier...'; }
+}
+
+// ═══════════ LAUNCH ═══════════
+async function launchAgents(extraInstructions){
+  if(running) return;
+  running=true; OUT={};
+  document.getElementById('rdy-btn').disabled=true;
+  document.getElementById('fstat').textContent='Agents aan het werk...';
+
+  // Build intake context
+  const iCtx=iHist.filter(m=>m.role==='user').map(m=>m.content).join('\n---\n');
+  const iBase=`Intake samenvatting: ${iSum}\n\nVolledige gebruikersinput:\n${iCtx}\n\nToon: ${tone}`;
+  const extra=extraInstructions?`\n\nEXTRA INSTRUCTIES OP BASIS VAN FEEDBACK:\n${extraInstructions}`:'';
+
+  // Reset flow
+  agents.slice(1).forEach(a=>{ setStep(a.id,'idle',''); setDot(a.id,'idle'); });
+  document.getElementById('aempty').style.display='flex';
+  document.getElementById('acontent').style.display='none';
+  switchTab('workflow');
+
+  try{
+    // 1. Bronnen Agent
+    setStep('bronnen','thinking','Bronnen zoeken bij overheidswebsites...');
+    setDot('bronnen','thinking');
+    const bronnen=await apiCall(agents[1].systemPrompt+extra, [{role:'user',content:iBase}]);
+    OUT.bronnen=bronnen;
+    setStep('bronnen','done',bronnen);
+    setDot('bronnen','done');
+    // Render sources visually
+    renderSources(bronnen);
+
+    // 2. Researcher
+    setStep('researcher','thinking','Strategie bepalen...');
+    setDot('researcher','thinking');
+    const research=await apiCall(agents[2].systemPrompt+extra, [{role:'user',content:`${iBase}\n\nGevonden bronnen:\n${bronnen}`}]);
+    OUT.research=research;
+    setStep('researcher','done',research);
+    setDot('researcher','done');
+
+    // 3. Writer — max_tokens schalen op woordenaantal (1 token ≈ 0.75 woord, plus overhead)
+    setStep('writer','thinking','Artikel schrijven...');
+    setDot('writer','thinking');
+    const wSys=agents[3].systemPrompt
+      .replace('{tone}', tone)
+      .replace('{wordcount}', wordCount)
+      + extra;
+    const writerMaxT = Math.max(1500, Math.ceil(wordCount * 1.6) + 400);
+    const draft=await apiCall(wSys, [{role:'user',content:`${iBase}\n\nBronnen:\n${bronnen}\n\nStrategische briefing:\n${research}`}], writerMaxT);
+    OUT.draft=draft;
+    setStep('writer','done',draft);
+    setDot('writer','done');
+
+    // 4. Reviewer — ook schalen
+    setStep('reviewer','thinking','Reviewen...');
+    setDot('reviewer','thinking');
+    const reviewerMaxT = Math.max(1500, Math.ceil(wordCount * 2) + 600);
+    const review=await apiCall(agents[4].systemPrompt+extra, [{role:'user',content:`${iBase}\n\nConcept artikel:\n${draft}`}], reviewerMaxT);
+    OUT.review=review;
+    setStep('reviewer','done',review);
+    setDot('reviewer','done');
+    const marker='===ARTIKEL===';
+    const idx=review.indexOf(marker);
+    OUT.reviewed=idx!==-1?review.substring(idx+marker.length).trim():draft;
+
+    // 5. Humanizer — ook schalen op woordenaantal
+    setStep('humanizer','thinking','AI-schrijfpatronen verwijderen...');
+    setDot('humanizer','thinking');
+    const humanizerMaxT = Math.max(1500, Math.ceil(wordCount * 1.6) + 400);
+    const human=await apiCall(agents[5].systemPrompt, [{role:'user',content:`Herschrijf dit artikel:\n\n${OUT.reviewed}`}], humanizerMaxT);
+    OUT.final=human;
+    setStep('humanizer','done',human);
+    setDot('humanizer','done');
+
+    renderArticle(OUT.final);
+    document.getElementById('fstat').textContent='✓ Klaar!';
+    setDot('intake','done');
+
+  }catch(e){
+    document.getElementById('fstat').textContent='Fout: '+e.message;
+    console.error(e);
+  }
+  running=false;
+  document.getElementById('rdy-btn').disabled=false;
+}
+
+// ═══════════ API ═══════════
+async function apiCall(system, messages, maxT=1200){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxT,system,messages})
+  });
+  const d=await r.json();
+  if(d.error) throw new Error(d.error.message);
+  return d.content.map(b=>b.text||'').join('');
+}
+
+// ═══════════ RENDER SOURCES ═══════════
+function renderSources(txt){
+  const list=document.getElementById('srclist');
+  if(!list) return;
+  const lines=txt.split('\n').filter(l=>l.includes('[BRON]'));
+  if(!lines.length){ list.style.display='none'; return; }
+  list.style.display='flex';
+  list.innerHTML=lines.slice(0,6).map(l=>{
+    const clean=l.replace('[BRON]','').trim();
+    const parts=clean.split('|');
+    return `<div class="src-item"><span class="src-tag">🔗</span><span class="src-txt">${parts.map(p=>p.trim()).join(' — ')}</span></div>`;
+  }).join('');
+}
+
+// ═══════════ RENDER ARTICLE ═══════════
+function renderArticle(html){
+  // Strip markdown bold/italic that slipped through
+  let c = html
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g,'<em>$1</em>');
+
+  // If no HTML structure, convert newlines
+  if(!c.includes('<h1>')&&!c.includes('<p>')){
+    c = c.split('\n\n').map(p=>`<p>${p.replace(/\n/g,'<br>')}</p>`).join('');
+  }
+
+  // Store clean html for downloads
+  OUT.articleHtml = c;
+
+  document.getElementById('acontent').innerHTML=`
+    <div class="abox">
+      <div style="font-size:10px;color:var(--mut);margin-bottom:1rem;text-transform:uppercase;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:center">
+        <span>📄 Finaal artikel · impactvandaag.nl</span>
+        <span id="art-wc" style="background:var(--gl);color:var(--g);border:1px solid #b8deca;border-radius:10px;padding:2px 8px;font-size:10px;letter-spacing:0"></span>
+      </div>
+      ${c}
+      <div style="margin-top:1.4rem;padding-top:1rem;border-top:1px solid var(--bdr);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="cbtn dl-btn primary" onclick="copyArt()">📋 Kopieer tekst</button>
+        <button class="cbtn dl-btn" onclick="dlHTML()">⬇ HTML</button>
+        <button class="cbtn dl-btn" onclick="dlWord()">⬇ Word</button>
+        <button class="cbtn dl-btn" onclick="dlPDF()">⬇ PDF</button>
+        <button class="cbtn dl-btn" onclick="mailNaarJan()" style="background:#fff8ec;border-color:#e8a530;color:#7a4e0a">✉ Mail naar Jan</button>
+        <button class="cbtn dl-btn" style="margin-left:auto" onclick="switchTab('beoordeling')">⭐ Beoordeel &amp; verbeter</button>
+      </div>
+    </div>`;
+  document.getElementById('aempty').style.display='none';
+  document.getElementById('acontent').style.display='block';
+
+  // Count words in rendered article
+  const artText = document.getElementById('acontent').innerText || '';
+  const wc = artText.trim().split(/\s+/).filter(w=>w.length>0).length;
+  const wcEl = document.getElementById('art-wc');
+  if(wcEl) wcEl.textContent = wc + ' woorden';
+
+  setTimeout(()=>switchTab('artikel'),600);
+}
+
+function copyArt(){ navigator.clipboard.writeText(document.getElementById('acontent').innerText).then(()=>alert('Gekopieerd!')); }
+
+// ── DOWNLOAD HTML ──
+function dlHTML(){
+  const title = (OUT.articleHtml||'').match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1] || 'artikel';
+  const full = `<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>${title}</title>
+<style>body{font-family:Georgia,serif;max-width:700px;margin:2rem auto;line-height:1.8;color:#1c1c1a;}
+h1{font-size:28px;margin-bottom:.5rem;}h2{font-size:20px;margin:1.5rem 0 .5rem;}
+p{margin-bottom:1rem;}</style></head><body>${OUT.articleHtml||''}</body></html>`;
+  const blob = new Blob([full],{type:'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = slug(title)+'.html';
+  a.click();
+}
+
+// ── DOWNLOAD WORD (.docx via HTML) ──
+function dlWord(){
+  const title = (OUT.articleHtml||'').match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1] || 'artikel';
+  const body = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:w="urn:schemas-microsoft-com:office:word"
+    xmlns="http://www.w3.org/TR/REC-html40">
+  <head><meta charset="UTF-8">
+  <style>
+    body{font-family:Calibri,sans-serif;font-size:11pt;line-height:1.8;}
+    h1{font-size:20pt;font-weight:bold;margin-bottom:6pt;}
+    h2{font-size:14pt;font-weight:bold;margin-top:12pt;margin-bottom:4pt;}
+    p{margin-bottom:8pt;}
+  </style></head>
+  <body>${OUT.articleHtml||''}</body></html>`;
+  const blob = new Blob(['\ufeff'+body],{type:'application/msword;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = slug(title)+'.doc';
+  a.click();
+}
+
+// ── DOWNLOAD PDF (via browser print) ──
+function dlPDF(){
+  const title = (OUT.articleHtml||'').match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1] || 'ImpactVandaag Artikel';
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>${title}</title>
+<style>
+  @media print { @page{margin:2cm;} }
+  body{font-family:Georgia,serif;font-size:11pt;max-width:100%;line-height:1.8;color:#1c1c1a;}
+  h1{font-size:22pt;margin-bottom:.4rem;}
+  h2{font-size:14pt;margin:1.2rem 0 .4rem;}
+  p{margin-bottom:.8rem;}
+  .meta{font-size:9pt;color:#888;margin-bottom:1.5rem;border-bottom:1px solid #ddd;padding-bottom:.5rem;}
+</style></head><body>
+<div class="meta">impactvandaag.nl — ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}</div>
+${OUT.articleHtml||''}
+</body></html>`);
+  w.document.close();
+  setTimeout(()=>{ w.focus(); w.print(); },500);
+}
+
+// ── MAIL NAAR JAN ──
+function mailNaarJan(){
+  if(!OUT.articleHtml && !OUT.final){ alert('Genereer eerst een artikel.'); return; }
+
+  // Extract title
+  const titleMatch = (OUT.articleHtml||'').match(/<h1[^>]*>([^<]+)<\/h1>/);
+  const titel = titleMatch ? titleMatch[1].trim() : 'Nieuw artikel ImpactVandaag';
+  const datum = new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'});
+
+  // Plain text body for mailto
+  const plainText = document.getElementById('acontent').innerText
+    .replace(/\n{3,}/g,'\n\n').trim();
+
+  const subject = encodeURIComponent(`Nieuw artikel ImpactVandaag — ${datum}: ${titel}`);
+  const body = encodeURIComponent(
+    `Hoi Jan,\n\nHierbij het nieuwe artikel voor impactvandaag.nl, gegenereerd op ${datum}.\n\n` +
+    `──────────────────────────\n${plainText}\n──────────────────────────\n\n` +
+    `Dit artikel is gegenereerd door de ImpactVandaag Artikel Agents.\n\nGroet`
+  );
+
+  // Open mail client
+  const mailto = `mailto:jan.devries@kbenp.nl?subject=${subject}&body=${body}`;
+  window.location.href = mailto;
+
+  // Also trigger PDF download so they can attach it
+  setTimeout(()=>{
+    if(confirm('Je e-mailprogramma is geopend. Wil je ook de PDF downloaden om als bijlage toe te voegen?')){
+      dlPDF();
+    }
+  }, 800);
+}
+
+// ── URL DETECTION IN INTAKE ──
+const intakeUrls = [];
+
+function detectUrl(ta){
+  const val = ta.value;
+  const urlRe = /(https?:\/\/[^\s]+)/g;
+  const found = val.match(urlRe);
+  if(found){
+    found.forEach(url=>{
+      if(!intakeUrls.includes(url)){
+        intakeUrls.push(url);
+        addUrlChip(url);
+      }
+    });
+    ta.value = val.replace(urlRe,'').trim();
+  }
+  ta.style.height='auto';
+  ta.style.height=Math.min(ta.scrollHeight,110)+'px';
+}
+
+function addUrlChip(url){
+  const wrap = document.getElementById('url-chips');
+  wrap.style.display='flex';
+  const chip = document.createElement('div');
+  chip.className='url-chip';
+  chip.dataset.url=url;
+  const display = url.replace(/^https?:\/\//,'').substring(0,40)+(url.length>46?'…':'');
+  chip.innerHTML=`<span class="url-chip-txt" title="${url}">🔗 ${display}</span><span class="url-chip-rm" onclick="removeUrl(this,'${url.replace(/'/g,"\\'")}')">×</span>`;
+  wrap.appendChild(chip);
+}
+
+function removeUrl(el, url){
+  const i=intakeUrls.indexOf(url);
+  if(i>-1) intakeUrls.splice(i,1);
+  el.parentElement.remove();
+  if(!intakeUrls.length) document.getElementById('url-chips').style.display='none';
+}
+
+async function sendMsg(){
+  const inp=document.getElementById('iinput');
+  let msg=inp.value.trim();
+  if(!msg && !intakeUrls.length) return;
+
+  // Build display message
+  let displayMsg = msg;
+  if(intakeUrls.length && !msg) displayMsg = '🔗 '+intakeUrls.map(u=>u.replace(/^https?:\/\//,'').substring(0,40)).join(', ');
+  else if(intakeUrls.length) displayMsg = msg + '\n🔗 '+intakeUrls.join('\n');
+
+  // Build API message with URLs
+  let apiMsg = msg;
+  if(intakeUrls.length){
+    apiMsg = (msg?msg+'\n\n':'')+'URL(s) voor extra context:\n'+intakeUrls.join('\n');
+  }
+
+  inp.value=''; inp.style.height='auto';
+  // Clear chips
+  intakeUrls.length=0;
+  document.getElementById('url-chips').innerHTML='';
+  document.getElementById('url-chips').style.display='none';
+
+  appendMsg('user', displayMsg);
+  await callIntake(apiMsg);
+}
+
+// ═══════════ BEOORDELING ═══════════
+async function submitBeoordeling(){
+  if(!OUT.final){ alert('Genereer eerst een artikel.'); return; }
+  const feedback=document.getElementById('btext').value.trim();
+  const btn=document.getElementById('bsubmit');
+  btn.disabled=true; btn.textContent='Analyseren...';
+
+  // Build feedback summary
+  const catSummary=Object.entries(catRatings).map(([k,v])=>`${k}: ${v}/5`).join(', ');
+  const fbMsg=`
+Artikel: ${OUT.final.substring(0,800)}...
+
+Beoordeling van de gebruiker:
+- Algemene score: ${globalRating}/5
+- Per categorie: ${catSummary||'niet ingevuld'}
+- Specifieke feedback: ${feedback||'geen'}
+
+Analyseer welke agents aangepast moeten worden. Geef je antwoord als JSON:
+{"plan":[{"id":"agent_id","emoji":"emoji","name":"naam","action":"update|skip|extra_info","reason":"korte reden","instruction":"wat de agent moet doen of aanpassen"}]}
+
+Agent IDs: bronnen, researcher, writer, reviewer, humanizer
+action=update: agent krijgt extra instructies
+action=extra_info: agent krijgt meer context uit de feedback
+action=skip: agent hoeft niets te veranderen
+
+Geef alleen JSON terug, geen toelichting.`;
+
+  try{
+    const raw=await apiCall(
+      'Je bent een workflow-coördinator. Analyseer feedback en verdeel instructies naar de juiste agents. Geef alleen valide JSON terug.',
+      [{role:'user',content:fbMsg}], 800
+    );
+    let parsed;
+    try{ parsed=JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch(e){ parsed={plan:agents.slice(1).map(a=>({id:a.id,emoji:a.emoji,name:a.name,action:'update',reason:'Feedback verwerken',instruction:feedback}))}; }
+
+    regenPlan=parsed.plan||[];
+    renderRegenPlan(regenPlan, feedback);
+  }catch(e){
+    alert('Fout bij analyseren: '+e.message);
+  }
+  btn.disabled=false; btn.textContent='↺ Regenereer op basis van feedback';
+}
+
+function renderRegenPlan(plan, feedback){
+  const container=document.getElementById('bregen-actions');
+  container.innerHTML=plan.map(p=>`
+    <div class="agent-feedback-row">
+      <div class="af-emoji">${p.emoji}</div>
+      <div class="af-body">
+        <div class="af-name">${p.name} <span class="af-badge ${p.action==='skip'?'skip':p.action==='extra_info'?'extra':'update'}">${p.action==='skip'?'Geen wijziging':p.action==='extra_info'?'Extra context':'Aanpassen'}</span></div>
+        <div class="af-action">${p.reason}${p.instruction&&p.action!=='skip'?` — <em>${p.instruction}</em>`:''}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('bregen-plan').style.display='block';
+  document.getElementById('bregen-plan').scrollIntoView({behavior:'smooth'});
+  // Store feedback for regen
+  document.getElementById('bregen-go').dataset.feedback=feedback;
+}
+
+function regenAgents(){
+  const feedback=document.getElementById('btext').value.trim();
+  // Build combined extra instructions from plan
+  const extra=regenPlan
+    .filter(p=>p.action!=='skip')
+    .map(p=>`[Voor ${p.name}]: ${p.instruction}`)
+    .join('\n');
+  document.getElementById('bregen-plan').style.display='none';
+  launchAgents(extra);
+}
+
+// ═══════════ RESET ═══════════
+function resetAll(){
+  if(!confirm('Nieuw artikel starten? Het huidige gesprek wordt gewist.')) return;
+  OUT={}; globalRating=0; catRatings={}; regenPlan=[];
+  document.querySelectorAll('.star').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.bcat-star').forEach(s=>s.classList.remove('on'));
+  document.getElementById('btext').value='';
+  document.getElementById('bregen-plan').style.display='none';
+  switchTab('intake'); renderFlow();
+  agents.forEach(a=>setDot(a.id,'idle'));
+  document.getElementById('aempty').style.display='flex';
+  document.getElementById('acontent').style.display='none';
+  document.getElementById('fstat').textContent='Wacht op intake...';
+  startIntake();
+}
+
+// ═══════════ CONFIG ═══════════
+function renderConfig(){
+  document.getElementById('cgrid').innerHTML=agents.map((a,i)=>`
+    <div class="ccard" id="cfg-${a.id}">
+      <div class="cchead">
+        <span style="font-size:20px">${a.emoji}</span>
+        <div><div style="font-weight:500;font-size:14px">${a.name}</div><div style="font-size:11px;color:var(--mut)">${a.role}</div></div>
+        <div style="margin-left:auto;display:flex;gap:5px;flex-wrap:wrap">
+          ${i===0?'<span style="font-size:10px;background:var(--ol);color:#8a3a18;padding:2px 7px;border-radius:10px;border:1px solid #f0c4aa">Intake</span>':''}
+          ${a.id==='bronnen'?'<span style="font-size:10px;background:#e8f0fe;color:#1a4b8a;padding:2px 7px;border-radius:10px;border:1px solid #b8cef4">Bronnen</span>':''}
+          ${a.id==='humanizer'?'<span style="font-size:10px;background:#f3e8fe;color:#5a1a8a;padding:2px 7px;border-radius:10px;border:1px solid #ceb8f4">Humanizer</span>':''}
+        </div>
+      </div>
+      <div class="ccbody">
+        <div class="frow">
+          <div><div class="flbl">Naam</div><input class="finp" id="cn-${a.id}" value="${esc(a.name)}"></div>
+          <div><div class="flbl">Emoji</div><input class="finp" id="ce-${a.id}" value="${a.emoji}" style="text-align:center"></div>
+        </div>
+        <div><div class="flbl">Rol</div><input class="finp" id="cr-${a.id}" value="${esc(a.role)}"></div>
+        <div><div class="flbl">Output label</div><input class="finp" id="cl-${a.id}" value="${esc(a.outputLabel)}"></div>
+        <div><div class="flbl">System prompt</div><textarea class="fta" id="cp-${a.id}">${esc(a.systemPrompt)}</textarea></div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="saveb" onclick="saveAgent('${a.id}')">Opslaan</button>
+          <span class="saok" id="sok-${a.id}">✓ Opgeslagen!</span>
+          <button class="rlink" onclick="resetAgent('${a.id}')">Reset naar standaard</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function saveAgent(id){
+  const i=agents.findIndex(a=>a.id===id);
+  agents[i].name=document.getElementById('cn-'+id).value;
+  agents[i].emoji=document.getElementById('ce-'+id).value;
+  agents[i].role=document.getElementById('cr-'+id).value;
+  agents[i].outputLabel=document.getElementById('cl-'+id).value;
+  agents[i].systemPrompt=document.getElementById('cp-'+id).value;
+  saveAgents(); renderSidebar(); renderFlow(); renderConfig();
+  const ok=document.getElementById('sok-'+id);
+  ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2000);
+}
+
+function resetAgent(id){
+  if(!confirm(`Reset "${id}" naar standaard voor ${SITE_DEFAULTS[currentSite].name}?`)) return;
+  const fresh = makeAgents(currentSite);
+  const def = fresh.find(a=>a.id===id);
+  const i = agents.findIndex(a=>a.id===id);
+  agents[i]={...def};
+  saveAgents(); renderSidebar(); renderFlow(); renderConfig();
+}
+
+// ═══════════ DAGELIJKSE WORKFLOW ═══════════
+
+const NIEUWS_PROMPT = `Je bent de Nieuws Agent van impactvandaag.nl — een platform dat ervaren professionals koppelt aan overheidswerk.
+
+Vandaag is het {datum}. Analyseer wat er de afgelopen 48 uur relevant is voor onze doelgroep: ervaren professionals (managers, specialisten, 5+ jaar werkervaring) die overwegen bij de overheid te gaan werken.
+
+Scan mentaal de volgende bronnen:
+- Rijksoverheid.nl (nieuwe vacatures, beleidsontwikkelingen, reorganisaties)
+- CBS.nl (arbeidsmarktcijfers, sectorrapportages)
+- Binnenlandsbestuur.nl (overheidsnieuws)
+- Gemeentebanenmarkt, werkenvoornederland.nl
+- Algemene arbeidsmarkttrends voor hoger opgeleiden
+
+Geef je analyse in dit exacte formaat:
+
+NIEUWS_GEVONDEN: ja/nee
+RELEVANTIE_SCORE: 0-10
+NIEUWS_ITEM: [korte beschrijving van het meest relevante item, of "geen" als niets relevant]
+REDENERING: [waarom dit wel/niet relevant is voor de doelgroep]
+ONDERWERP_VOORSTEL: [concrete onderwerpstitel voor een artikel]
+
+Wees eerlijk. Als je geen actueel nieuws kent dat relevant genoeg is (score < 6), zeg dan "nee".`;
+
+const EVERGREEN_PROMPT = `Je bent een contentstrateeg voor impactvandaag.nl.
+
+Vandaag is er geen urgent nieuws. Kies het beste evergreen onderwerp voor een artikel gericht aan ervaren professionals die overwegen bij de overheid te werken.
+
+AL GESCHREVEN ONDERWERPEN (vermijd deze volledig, ook vergelijkbare invalshoeken):
+{blacklist}
+
+BESCHIKBARE THEMA-CATEGORIEËN:
+1. Arbeidsvoorwaarden & rechtspositie overheid
+2. Carrière-transitie van privaat naar publiek
+3. Specifieke overheidsrollen (beleidsadviseur, projectmanager, inkoper, etc.)
+4. Werk-privébalans bij de overheid
+5. Salarisschalen en pensioen rijksoverheid
+6. Cultuurverschil overheid vs. bedrijfsleven
+7. Hoe impactvandaag.nl werkt en wat het biedt
+8. Succesverhalen van professionals bij de overheid
+9. Actuele uitdagingen waarvoor de overheid professionals zoekt
+10. Flexibiliteit, thuiswerken en hybride werken bij de overheid
+
+Kies het onderwerp dat:
+- Nog NIET in de lijst staat
+- Het meest waardevol is voor de doelgroep op dit moment
+- Concreet genoeg is voor een sterk artikel
+
+Geef je antwoord in dit exacte formaat:
+ONDERWERP: [titel]
+CATEGORIE: [nummer uit lijst]
+INVALSHOEK: [1-2 zinnen over de specifieke insteek]
+BRIEFING: [3-5 zinnen strategische context voor de writers]`;
+
+// Dagelijks state
+let dagHistory = JSON.parse(localStorage.getItem('iv_dag_history_' + currentSite)||'[]');
+let dagBlacklist = localStorage.getItem('iv_dag_blacklist_' + currentSite)||'';
+let dagRunning = false;
+
+function initDagelijks(){
+  dagHistory = JSON.parse(localStorage.getItem('iv_dag_history_' + currentSite)||'[]');
+  dagBlacklist = localStorage.getItem('iv_dag_blacklist_' + currentSite)||'';
+  renderDagHistory();
+  document.getElementById('dag-blacklist').value = dagBlacklist;
+  const last = dagHistory[0];
+  document.getElementById('dag-last-run').textContent = last ? formatDate(last.date) : 'Nog nooit gedraaid';
+  const dagMailDiv = document.getElementById('dag-mail-row');
+  if(dagMailDiv) dagMailDiv.style.display='none';
+}
+
+function formatDate(iso){
+  return new Date(iso).toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function saveBlacklist(){
+  dagBlacklist = document.getElementById('dag-blacklist').value;
+  localStorage.setItem('iv_dag_blacklist_' + currentSite, dagBlacklist);
+  const ok = document.getElementById('dag-bl-ok');
+  ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2000);
+}
+
+function clearHistory(){
+  if(!confirm('Alle artikel-geschiedenis wissen voor ' + SITE_DEFAULTS[currentSite].name + '?')) return;
+  dagHistory=[];
+  localStorage.removeItem('iv_dag_history_' + currentSite);
+  dagBlacklist='';
+  localStorage.removeItem('iv_dag_blacklist_' + currentSite);
+  document.getElementById('dag-blacklist').value='';
+  renderDagHistory();
+}
+
+function renderDagHistory(){
+  const list = document.getElementById('dag-history-list');
+  const count = document.getElementById('dag-art-count');
+  count.textContent = dagHistory.length + ' artikel' + (dagHistory.length!==1?'en':'');
+  if(!dagHistory.length){
+    list.innerHTML='<div style="font-size:12px;color:var(--mut);font-style:italic;padding:4px 0">Nog geen artikelen gegenereerd.</div>';
+    return;
+  }
+  list.innerHTML = dagHistory.map((item,i)=>`
+    <div class="dag-hist-item" onclick="loadHistoryItem(${i})">
+      <div style="font-size:20px">${item.type==='nieuws'?'📰':'🌿'}</div>
+      <div class="dag-hist-meta">
+        <div class="dag-hist-title">${item.onderwerp}</div>
+        <div class="dag-hist-sub">${formatDate(item.date)}</div>
+      </div>
+      <span class="dag-hist-type ${item.type}">${item.type==='nieuws'?'Nieuws':'Evergreen'}</span>
+    </div>`).join('');
+}
+
+function loadHistoryItem(i){
+  const item = dagHistory[i];
+  if(!item||!item.artikel) return;
+  OUT.final = item.artikel;
+  OUT.articleHtml = item.artikel;
+  renderArticle(item.artikel);
+}
+
+async function startDagelijkseRun(){
+  if(dagRunning||running) return;
+  dagRunning = true;
+  const btn = document.getElementById('dag-run-btn');
+  btn.disabled = true; btn.textContent = '⏳ Bezig...';
+
+  // Show progress
+  const progEl = document.getElementById('dag-progress');
+  progEl.style.display='block';
+  const steps = [
+    {id:'s1', label:'Nieuws Agent — overheidsnieuws scannen'},
+    {id:'s2', label:'Onderwerp bepalen'},
+    {id:'s3', label:'Bronnen Agent'},
+    {id:'s4', label:'Researcher'},
+    {id:'s5', label:'Writer'},
+    {id:'s6', label:'Reviewer'},
+    {id:'s7', label:'Humanizer'},
+  ];
+  document.getElementById('dag-prog-steps').innerHTML = steps.map(s=>`
+    <div class="dag-step-row">
+      <div class="dag-step-dot" id="ds-${s.id}"></div>
+      <span id="dl-${s.id}" style="color:var(--mut)">${s.label}</span>
+    </div>`).join('');
+
+  function setDS(id,state,label){
+    const d=document.getElementById('ds-'+id); if(d) d.className='dag-step-dot '+state;
+    const l=document.getElementById('dl-'+id); if(l&&label){ l.textContent=label; l.style.color=state==='ok'?'var(--dark)':'var(--mut)'; }
+  }
+
+  // Show nieuws card
+  document.getElementById('dag-nieuws-card').style.display='block';
+  document.getElementById('dag-onderwerp-card').style.display='none';
+
+  try {
+    // ── STAP 1: Nieuws Agent ──
+    setDS('s1','run');
+    const datum = new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    const bestaandeOnderwerpen = dagHistory.map(h=>h.onderwerp).join('\n') + '\n' + dagBlacklist;
+
+    const nieuwsRaw = await apiCall(
+      'Je bent een nauwkeurige nieuws-analist. Geef altijd je antwoord in het gevraagde formaat.',
+      [{role:'user', content: NIEUWS_PROMPT.replace('{datum}',datum)}],
+      600
+    );
+    document.getElementById('dag-nieuws-out').textContent = nieuwsRaw;
+    document.getElementById('dag-nieuws-badge').textContent = 'Klaar ✓';
+    document.getElementById('dag-nieuws-badge').className = 'dag-badge ok';
+    setDS('s1','ok','Nieuws Agent — klaar');
+
+    // Parse nieuws output
+    const nieuwsGevonden = /NIEUWS_GEVONDEN:\s*ja/i.test(nieuwsRaw);
+    const relevantieMatch = nieuwsRaw.match(/RELEVANTIE_SCORE:\s*(\d+)/);
+    const relevantie = relevantieMatch ? +relevantieMatch[1] : 0;
+    const onderwerpMatch = nieuwsRaw.match(/ONDERWERP_VOORSTEL:\s*(.+)/);
+    let nieuwsOnderwerp = onderwerpMatch ? onderwerpMatch[1].trim() : '';
+
+    const gebruikNieuws = nieuwsGevonden && relevantie >= 6;
+
+    // Show beslissing
+    const beslissEl = document.getElementById('dag-beslissing');
+    beslissEl.style.display='block';
+    document.getElementById('dag-beslissing-icon').textContent = gebruikNieuws ? '📰' : '🌿';
+    document.getElementById('dag-beslissing-txt').textContent = gebruikNieuws
+      ? `Relevant nieuws gevonden (score ${relevantie}/10) — schrijven we een nieuwsartikel.`
+      : `Geen urgent nieuws (score ${relevantie}/10) — we schrijven een evergreen artikel.`;
+
+    // ── STAP 2: Onderwerp bepalen ──
+    setDS('s2','run');
+    let briefing = '';
+    let artikelType = gebruikNieuws ? 'nieuws' : 'evergreen';
+    let gekozenOnderwerp = '';
+
+    if(gebruikNieuws){
+      gekozenOnderwerp = nieuwsOnderwerp;
+      briefing = nieuwsRaw; // full nieuws context is the briefing
+    } else {
+      // Call evergreen agent
+      const evergreenRaw = await apiCall(
+        'Je bent een contentstrateeg. Geef altijd je antwoord in het gevraagde formaat.',
+        [{role:'user', content: EVERGREEN_PROMPT.replace('{blacklist}', bestaandeOnderwerpen || 'Geen')}],
+        500
+      );
+      const evOnderwerp = evergreenRaw.match(/ONDERWERP:\s*(.+)/)?.[1]?.trim() || 'Overheidswerk voor professionals';
+      const evBriefing = evergreenRaw.match(/BRIEFING:\s*([\s\S]+)/)?.[1]?.trim() || evergreenRaw;
+      gekozenOnderwerp = evOnderwerp;
+      briefing = evergreenRaw;
+    }
+
+    document.getElementById('dag-onderwerp-card').style.display='block';
+    document.getElementById('dag-onderwerp-out').textContent = `📌 ${gekozenOnderwerp}\n\n${briefing}`;
+    setDS('s2','ok','Onderwerp bepaald: ' + gekozenOnderwerp.substring(0,50));
+
+    // ── STAP 3-7: Productie-agents ──
+    const iBase = `Dagelijkse run — ${datum}\nType: ${artikelType}\nOnderwerp: ${gekozenOnderwerp}\nToon: ${tone}\nAantal woorden: ${wordCount}\n\nBriefing:\n${briefing}`;
+
+    setDS('s3','run');
+    const bronnen = await apiCall(agents[1].systemPrompt, [{role:'user',content:iBase}], 800);
+    setDS('s3','ok');
+
+    setDS('s4','run');
+    const research = await apiCall(agents[2].systemPrompt, [{role:'user',content:`${iBase}\n\nGevonden bronnen:\n${bronnen}`}], 900);
+    setDS('s4','ok');
+
+    setDS('s5','run');
+    const wSys = agents[3].systemPrompt.replace('{tone}',tone).replace('{wordcount}',wordCount);
+    const writerMaxT = Math.max(1500, Math.ceil(wordCount*1.6)+400);
+    const draft = await apiCall(wSys, [{role:'user',content:`${iBase}\n\nBronnen:\n${bronnen}\n\nStrategische briefing:\n${research}`}], writerMaxT);
+    setDS('s5','ok');
+
+    setDS('s6','run');
+    const reviewerMaxT = Math.max(1500, Math.ceil(wordCount*2)+600);
+    const review = await apiCall(agents[4].systemPrompt, [{role:'user',content:`${iBase}\n\nConcept artikel:\n${draft}`}], reviewerMaxT);
+    const marker='===ARTIKEL===';
+    const idx=review.indexOf(marker);
+    const reviewed = idx!==-1 ? review.substring(idx+marker.length).trim() : draft;
+    setDS('s6','ok');
+
+    setDS('s7','run');
+    const humMaxT = Math.max(1500, Math.ceil(wordCount*1.6)+400);
+    const final = await apiCall(agents[5].systemPrompt, [{role:'user',content:`Herschrijf dit artikel:\n\n${reviewed}`}], humMaxT);
+    setDS('s7','ok');
+
+    // ── Opslaan in geschiedenis ──
+    const histItem = {
+      date: new Date().toISOString(),
+      onderwerp: gekozenOnderwerp,
+      type: artikelType,
+      artikel: final
+    };
+    dagHistory.unshift(histItem);
+    localStorage.setItem('iv_dag_history_' + currentSite, JSON.stringify(dagHistory.slice(0,50)));
+
+    // Update blacklist
+    dagBlacklist = (dagBlacklist ? dagBlacklist + '\n' : '') + gekozenOnderwerp;
+    localStorage.setItem('iv_dag_blacklist_' + currentSite, dagBlacklist);
+    document.getElementById('dag-blacklist').value = dagBlacklist;
+
+    // Render article and history
+    OUT.final = final; OUT.articleHtml = final;
+    renderDagHistory();
+    renderArticle(final);
+    // Show mail button in dagelijks tab
+    const dagMailDiv = document.getElementById('dag-mail-row');
+    if(dagMailDiv) dagMailDiv.style.display='flex';
+
+    document.getElementById('dag-last-run').textContent = formatDate(histItem.date);
+
+  } catch(e) {
+    document.getElementById('dag-nieuws-out').textContent = '⚠️ Fout: ' + e.message;
+    console.error(e);
+  }
+
+  dagRunning = false;
+  btn.disabled = false; btn.textContent = '▶ Start dagelijkse run';
+}
+
+init();
+</script>
+</body>
+</html>
