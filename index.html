@@ -700,9 +700,9 @@ const HC = {
   sb_url:     'https://yrnrnmwtjsxgzanbunur.supabase.co',
   sb_key:     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlybnJubXd0anN4Z3phbmJ1bnVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3OTAwOTUsImV4cCI6MjA5NTM2NjA5NX0.dhYAnifSdCHLIqm6FB-c28HX3r6jFN6WtGS_DpvHoT4',
   provider:   'google',
-  api_key:    'AIzaSyAyxxwfaDQeqv3szcByC9EJ5Kteq2ihsFc',
+  api_key:    '',  // Vul in via Configureer → Beveiligde instellingen
   worker_url: 'https://mute-wildflower-c45bdwa.jan-devries.workers.dev',
-  model:      'gemini-2.0-flash',
+  model:      'gemini-2.5-flash-preview-05-20',
 };
 
 // Zet hardcoded waarden altijd in localStorage (overschrijft niets als al ingesteld via UI)
@@ -1480,7 +1480,7 @@ async function launchAgents(extraInstructions){
       .replace('{tone}', tone)
       .replace('{wordcount}', wordCount)
       + extra;
-    const writerMaxT = Math.max(1500, Math.ceil(wordCount * 1.6) + 400);
+    const writerMaxT = 20000;
     const draft=await apiCall(wSys, [{role:'user',content:`${iBase}\n\nBronnen:\n${bronnen}\n\nStrategische briefing:\n${research}`}], writerMaxT);
     OUT.draft=draft;
     setStep('writer','done',draft);
@@ -1489,7 +1489,7 @@ async function launchAgents(extraInstructions){
     // 4. Reviewer — ook schalen
     setStep('reviewer','thinking','Reviewen...');
     setDot('reviewer','thinking');
-    const reviewerMaxT = Math.max(1500, Math.ceil(wordCount * 2) + 600);
+    const reviewerMaxT = 20000;
     const review=await apiCall(agents[4].systemPrompt+extra, [{role:'user',content:`${iBase}\n\nConcept artikel:\n${draft}`}], reviewerMaxT);
     OUT.review=review;
     setStep('reviewer','done',review);
@@ -1501,7 +1501,7 @@ async function launchAgents(extraInstructions){
     // 5. Humanizer — ook schalen op woordenaantal
     setStep('humanizer','thinking','AI-schrijfpatronen verwijderen...');
     setDot('humanizer','thinking');
-    const humanizerMaxT = Math.max(1500, Math.ceil(wordCount * 1.6) + 400);
+    const humanizerMaxT = 20000;
     const human=await apiCall(agents[5].systemPrompt, [{role:'user',content:`Herschrijf dit artikel:\n\n${OUT.reviewed}`}], humanizerMaxT);
     OUT.final=human;
     setStep('humanizer','done',human);
@@ -1527,9 +1527,9 @@ const MODELS = {
     { id: 'claude-haiku-4-5-20251001',label: 'Claude Haiku 4 (goedkoopst)' },
   ],
   google: [
-    { id: 'gemini-1.5-flash',   label: 'Gemini 1.5 Flash (snel, goedkoop)' },
-    { id: 'gemini-1.5-pro',     label: 'Gemini 1.5 Pro (slimmer)' },
-    { id: 'gemini-2.0-flash',   label: 'Gemini 2.0 Flash (nieuwste)' },
+    { id: 'gemini-2.5-flash-preview-05-20', label: 'Gemini 2.5 Flash (aanbevolen)' },
+    { id: 'gemini-2.5-pro-preview-05-06',   label: 'Gemini 2.5 Pro (slimmer)' },
+    { id: 'gemini-2.0-flash',               label: 'Gemini 2.0 Flash (ouder)' },
   ]
 };
 
@@ -1684,7 +1684,7 @@ async function testApiConnection() {
 }
 
 // ═══════════ API CALL ═══════════
-async function apiCall(system, messages, maxT=1200){
+async function apiCall(system, messages, maxT=20000){
   const s = getApiSettings();
 
   if (!s.apiKey) throw new Error('Geen API key ingesteld — ga naar Configureer → API Instellingen');
@@ -2290,12 +2290,12 @@ async function startDagelijkseRun(){
 
     setDS('s5','run');
     const wSys = agents[3].systemPrompt.replace('{tone}',tone).replace('{wordcount}',wordCount);
-    const writerMaxT = Math.max(1500, Math.ceil(wordCount*1.6)+400);
+    const writerMaxT = 20000;
     const draft = await apiCall(wSys, [{role:'user',content:`${iBase}\n\nBronnen:\n${bronnen}\n\nStrategische briefing:\n${research}`}], writerMaxT);
     setDS('s5','ok');
 
     setDS('s6','run');
-    const reviewerMaxT = Math.max(1500, Math.ceil(wordCount*2)+600);
+    const reviewerMaxT = 20000;
     const review = await apiCall(agents[4].systemPrompt, [{role:'user',content:`${iBase}\n\nConcept artikel:\n${draft}`}], reviewerMaxT);
     const marker='===ARTIKEL===';
     const idx=review.indexOf(marker);
@@ -2303,7 +2303,7 @@ async function startDagelijkseRun(){
     setDS('s6','ok');
 
     setDS('s7','run');
-    const humMaxT = Math.max(1500, Math.ceil(wordCount*1.6)+400);
+    const humMaxT = 20000;
     const final = await apiCall(agents[5].systemPrompt, [{role:'user',content:`Herschrijf dit artikel:\n\n${reviewed}`}], humMaxT);
     setDS('s7','ok');
 
