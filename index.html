@@ -47,6 +47,30 @@ body.site-oo .cmsg.u .bin{background:var(--g);}
 body.site-oo .fstep.done{border-color:#b8cbec;background:var(--gl);}
 body.site-oo .dag-badge.ok{background:var(--gl);color:var(--g);border-color:#b8cbec;}
 
+/* ── ARCHIEF ── */
+#panel-archief{overflow-y:auto;flex-direction:column;}
+.arch-wrap{padding:1.4rem;display:flex;flex-direction:column;gap:1rem;max-width:100%;width:100%;}
+.arch-head{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;padding-bottom:.8rem;border-bottom:1px solid var(--bdr);}
+.arch-title{font-family:'Fraunces',serif;font-size:22px;font-weight:300;}
+.arch-controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.arch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.arch-item{background:var(--wht);border:1px solid var(--bdr);border-radius:var(--rxl);padding:1.1rem 1.2rem;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:8px;}
+.arch-item:hover{border-color:var(--g);box-shadow:0 2px 12px rgba(0,0,0,.06);transform:translateY(-1px);}
+.arch-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.arch-item-title{font-family:'Fraunces',serif;font-size:14px;font-weight:600;line-height:1.4;color:var(--dark);flex:1;}
+.arch-item-badges{display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0;}
+.arch-item-meta{font-size:10px;color:var(--mut);}
+.arch-item-preview{font-size:12px;color:var(--mut);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.arch-item-footer{display:flex;align-items:center;justify-content:space-between;margin-top:2px;}
+.arch-open-btn{font-size:11px;color:var(--g);background:var(--gl);border:none;border-radius:var(--rmd);padding:4px 10px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.arch-open-btn:hover{background:var(--g);color:#fff;}
+.arch-type{font-size:10px;padding:2px 7px;border-radius:10px;flex-shrink:0;font-weight:500;}
+.arch-type.nieuws{background:#e8f0fe;color:#1a4b8a;border:1px solid #b8cef4;}
+.arch-type.evergreen{background:var(--gl);color:var(--g);border:1px solid #b8deca;}
+.arch-type.handmatig{background:#f3e8fe;color:#5a1a8a;border:1px solid #ceb8f4;}
+.arch-site-badge{font-size:10px;padding:2px 6px;border-radius:8px;background:var(--sand);color:var(--mut);border:1px solid var(--bdr);}
+.arch-empty{font-size:13px;color:var(--mut);font-style:italic;padding:2rem;text-align:center;background:var(--wht);border-radius:var(--rxl);border:1px dashed var(--bdr);}
+.arch-count{font-size:12px;color:var(--mut);margin-top:2px;}
 body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--dark);min-height:100vh;font-size:15px;}
 
 header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;}
@@ -435,8 +459,11 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
   <div class="panel" id="panel-archief">
     <div class="arch-wrap">
       <div class="arch-head">
-        <div style="font-family:'Fraunces',serif;font-size:19px;font-weight:300">Artikel Archief</div>
-        <div style="display:flex;gap:8px;align-items:center">
+        <div>
+          <div class="arch-title">📂 Artikel Archief</div>
+          <div class="arch-count" id="arch-count"></div>
+        </div>
+        <div class="arch-controls">
           <select id="arch-filter-site" class="finp" style="font-size:12px;padding:5px 8px;width:auto" onchange="renderArchief()">
             <option value="all">Alle sites</option>
             <option value="iv">ImpactVandaag</option>
@@ -448,11 +475,11 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
             <option value="evergreen">Evergreen</option>
             <option value="handmatig">Handmatig</option>
           </select>
-          <button class="saveb" style="font-size:12px;padding:5px 12px" onclick="loadArchief()">↺ Ververs</button>
+          <button class="saveb" style="font-size:12px;padding:5px 12px;background:var(--sand);color:var(--dark);border:1px solid var(--bdr)" onclick="loadArchief()">↺ Ververs</button>
         </div>
       </div>
-      <div id="arch-list" style="display:flex;flex-direction:column;gap:8px">
-        <div style="font-size:13px;color:var(--mut);font-style:italic;padding:1rem 0">Laden...</div>
+      <div class="arch-grid" id="arch-list">
+        <div class="arch-empty">Laden...</div>
       </div>
     </div>
   </div>
@@ -1799,13 +1826,15 @@ function dlWord(){
     p{margin-bottom:8pt;}
   </style></head>
   <body>${html}</body></html>`;
-  const blob = new Blob(['\ufeff'+body],{type:'application/msword;charset=utf-8'});
+  const blob = new Blob(['\ufeff'+body],{type:'application/vnd.ms-word;charset=utf-8'});
+  const _wurl = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  a.style.display='none';
+  a.href = _wurl;
   a.download = slug(title)+'.doc';
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(_wurl); }, 300);
 }
 
 // ── DOWNLOAD PDF (via browser print) ──
@@ -2369,20 +2398,35 @@ function renderArchief() {
     return;
   }
 
+  const countEl = document.getElementById('arch-count');
+  if(countEl) countEl.textContent = items.length + ' artikel' + (items.length !== 1 ? 'en' : '');
+
   list.innerHTML = items.map((item, idx) => {
     const siteLabel = item.site === 'oo' ? 'OpdrachtOverheid' : 'ImpactVandaag';
+    const siteColor = item.site === 'oo' ? '#e8eef8' : 'var(--gl)';
+    const siteTxtColor = item.site === 'oo' ? '#1a4b9e' : 'var(--g)';
     const type = item.type || 'handmatig';
-    const preview = (item.artikel || '').replace(/<[^>]+>/g,'').substring(0,140) + '...';
-    const datum = item.date ? new Date(item.date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    const typeLabel = type === 'handmatig' ? '✍ handmatig' : type === 'nieuws' ? '📰 nieuws' : '🌿 evergreen';
+    const rawText = (item.artikel || '').replace(/<[^>]+>/g,'');
+    const titel = (item.onderwerp || rawText.substring(0,60) || 'Zonder titel');
+    const preview = rawText.substring(0,160).trim() + (rawText.length > 160 ? '...' : '');
+    const datum = item.date ? new Date(item.date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '';
+    const tijd = item.date ? new Date(item.date).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}) : '';
+    const wc = rawText.trim().split(/\s+/).filter(w=>w.length>0).length;
     return `
       <div class="arch-item" onclick="openArchiefItem(${idx})">
-        <div class="arch-item-head">
-          <div class="arch-item-title">${item.onderwerp || 'Zonder titel'}</div>
-          <span class="arch-type ${type}">${type}</span>
-          <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--sand);color:var(--mut);border:1px solid var(--bdr)">${siteLabel}</span>
+        <div class="arch-item-top">
+          <div class="arch-item-title">${titel}</div>
+          <div class="arch-item-badges">
+            <span class="arch-type ${type}">${typeLabel}</span>
+            <span class="arch-site-badge" style="background:${siteColor};color:${siteTxtColor}">${siteLabel}</span>
+          </div>
         </div>
-        <div class="arch-item-meta">${datum}</div>
         <div class="arch-item-preview">${preview}</div>
+        <div class="arch-item-footer">
+          <div class="arch-item-meta">📅 ${datum} ${tijd} &nbsp;·&nbsp; ${wc} woorden</div>
+          <button class="arch-open-btn" onclick="event.stopPropagation();openArchiefItem(${idx})">Lees artikel →</button>
+        </div>
       </div>`;
   }).join('');
 }
