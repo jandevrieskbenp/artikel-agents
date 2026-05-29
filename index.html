@@ -137,7 +137,6 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
 .url-chip-rm:hover{color:var(--o);}
 
 /* ── DAGELIJKS ── */
-#panel-dagelijks{overflow-y:auto;flex-direction:column;}
 .dag-wrap{padding:1.2rem;display:flex;flex-direction:column;gap:.9rem;}
 .dag-card{background:var(--wht);border:1px solid var(--bdr);border-radius:var(--rxl);overflow:hidden;}
 .dag-card-head{display:flex;align-items:center;gap:10px;padding:1rem 1.2rem;flex-wrap:wrap;}
@@ -331,7 +330,7 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
     <div class="tab" data-tab="workflow">Workflow</div>
     <div class="tab" data-tab="artikel">Artikel</div>
     <div class="tab" data-tab="beoordeling">⭐ Beoordeling</div>
-    <div class="tab" data-tab="dagelijks">📅 Dagelijks</div>
+    <div class="tab" data-tab="archief">🗂️ Archief</div>
     <div class="tab" data-tab="config">Configureer</div>
   </nav>
 
@@ -432,75 +431,29 @@ header{background:var(--dark);padding:0 2rem;display:flex;align-items:center;jus
     </div>
   </div>
 
-  <!-- DAGELIJKS -->
-  <div class="panel" id="panel-dagelijks">
-    <div class="dag-wrap">
-
-      <!-- Status header -->
-      <div class="dag-card" id="dag-status-card">
-        <div class="dag-card-head">
-          <span style="font-size:20px">📅</span>
-          <div>
-            <div style="font-weight:500;font-size:14px">Dagelijkse Artikel Generator</div>
-            <div style="font-size:11px;color:var(--mut)">Laatste run: <span id="dag-last-run">Nog nooit gedraaid</span></div>
-          </div>
-          <button class="dag-run-btn" id="dag-run-btn" onclick="startDagelijkseRun()">▶ Start dagelijkse run</button>
-        </div>
-        <div id="dag-mail-row" style="display:none;align-items:center;gap:8px;padding:.6rem 1.2rem;border-top:1px solid var(--bdr);background:var(--sand)">
-          <span style="font-size:12px;color:var(--mut)">Artikel klaar —</span>
-          <button onclick="mailNaarJan()" style="font-size:12px;padding:5px 12px;background:#fff8ec;border:1px solid #e8a530;color:#7a4e0a;border-radius:var(--rmd);cursor:pointer;font-family:'DM Sans',sans-serif">✉ Mail naar jan.devries@kbenp.nl</button>
-          <button onclick="switchTab('artikel')" style="font-size:12px;padding:5px 12px;background:var(--gl);border:1px solid var(--g);color:var(--g);border-radius:var(--rmd);cursor:pointer;font-family:'DM Sans',sans-serif">→ Bekijk artikel</button>
-        </div>
-        <div class="dag-progress" id="dag-progress" style="display:none">
-          <div class="dag-prog-steps" id="dag-prog-steps"></div>
+  <!-- ARCHIEF -->
+  <div class="panel" id="panel-archief">
+    <div class="arch-wrap">
+      <div class="arch-head">
+        <div style="font-family:'Fraunces',serif;font-size:19px;font-weight:300">Artikel Archief</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="arch-filter-site" class="finp" style="font-size:12px;padding:5px 8px;width:auto" onchange="renderArchief()">
+            <option value="all">Alle sites</option>
+            <option value="iv">ImpactVandaag</option>
+            <option value="oo">OpdrachtOverheid</option>
+          </select>
+          <select id="arch-filter-type" class="finp" style="font-size:12px;padding:5px 8px;width:auto" onchange="renderArchief()">
+            <option value="all">Alle types</option>
+            <option value="nieuws">Nieuws</option>
+            <option value="evergreen">Evergreen</option>
+            <option value="handmatig">Handmatig</option>
+          </select>
+          <button class="saveb" style="font-size:12px;padding:5px 12px" onclick="loadArchief()">↺ Ververs</button>
         </div>
       </div>
-
-      <!-- Nieuws agent output -->
-      <div class="dag-card" id="dag-nieuws-card" style="display:none">
-        <div class="dag-card-inner-head">
-          <span>📰</span><span style="font-weight:500;font-size:13px">Nieuws Agent — gevonden relevante updates</span>
-          <span class="dag-badge" id="dag-nieuws-badge">Zoeken...</span>
-        </div>
-        <div class="dag-output" id="dag-nieuws-out">Bezig met scannen...</div>
-        <div id="dag-beslissing" style="display:none;margin-top:.7rem;padding:.7rem;background:var(--sand);border-radius:var(--rmd);border:1px solid var(--bdr)">
-          <span id="dag-beslissing-icon" style="font-size:14px"></span>
-          <span id="dag-beslissing-txt" style="font-size:13px;margin-left:6px"></span>
-        </div>
+      <div id="arch-list" style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:13px;color:var(--mut);font-style:italic;padding:1rem 0">Laden...</div>
       </div>
-
-      <!-- Onderwerp selectie -->
-      <div class="dag-card" id="dag-onderwerp-card" style="display:none">
-        <div class="dag-card-inner-head">
-          <span>🎯</span><span style="font-weight:500;font-size:13px">Gekozen onderwerp voor vandaag</span>
-        </div>
-        <div class="dag-output" id="dag-onderwerp-out" style="font-size:13px;line-height:1.6"></div>
-      </div>
-
-      <!-- Artikel geschiedenis -->
-      <div class="dag-card" id="dag-history-card">
-        <div class="dag-card-inner-head">
-          <span>🗂️</span>
-          <span style="font-weight:500;font-size:13px">Geschreven artikelen</span>
-          <span id="dag-art-count" style="font-size:11px;color:var(--mut);margin-left:auto"></span>
-          <button onclick="clearHistory()" style="font-size:11px;color:var(--mut);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;margin-left:8px">Wis alles</button>
-        </div>
-        <div id="dag-history-list" style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem">
-          <div style="font-size:12px;color:var(--mut);font-style:italic;padding:4px 0">Nog geen artikelen gegenereerd.</div>
-        </div>
-      </div>
-
-      <!-- Onderwerp blacklist -->
-      <div class="dag-card">
-        <div class="dag-card-inner-head">
-          <span>🚫</span><span style="font-weight:500;font-size:13px">Vermijd deze onderwerpen</span>
-          <span style="font-size:11px;color:var(--mut);margin-left:6px">(automatisch gevuld, handmatig aan te passen)</span>
-        </div>
-        <textarea id="dag-blacklist" class="fta" style="min-height:80px;margin-top:.5rem;font-size:12px" placeholder="Onderwerpen gescheiden door enter..."></textarea>
-        <button class="saveb" style="margin-top:.5rem;font-size:12px;padding:6px 12px" onclick="saveBlacklist()">Opslaan</button>
-        <span id="dag-bl-ok" style="font-size:11px;color:var(--g);display:none;margin-left:8px">✓ Opgeslagen</span>
-      </div>
-
     </div>
   </div>
 
@@ -1176,7 +1129,6 @@ function switchSite(site) {
   renderFlow();
   renderConfig();
   loadSiteConfigUI();
-  initDagelijks();
   switchTab('intake');
   startIntake();
 }
@@ -1283,7 +1235,6 @@ async function init(){
   if (sbUrl) sbUrl.value = localStorage.getItem('iv_sb_url') || '';
   if (sbKey) sbKey.value = localStorage.getItem('iv_sb_key') || '';
 
-  await initDagelijks();
 
   // Warn if API not configured
   const s = getApiSettings();
@@ -1297,14 +1248,25 @@ async function init(){
 // ═══════════ SIDEBAR ═══════════
 function renderSidebar(){
   document.getElementById('sb-agents').innerHTML = agents.map((a,i)=>`
-    <div class="apill" onclick="goConfig(${i})">
-      <div class="aemoji">${a.emoji}</div>
-      <div class="ameta"><div class="aname">${a.name}</div><div class="arole">${a.role}</div></div>
+    <div class="apill" style="padding-right:6px">
+      <div class="aemoji" onclick="goConfig(${i})" style="cursor:pointer">${a.emoji}</div>
+      <div class="ameta" onclick="goConfig(${i})" style="cursor:pointer;flex:1"><div class="aname">${a.name}</div><div class="arole">${a.role}</div></div>
       <div class="adot" id="dot-${a.id}"></div>
-      <span class="ehint">✏</span>
+      ${a.id!=='intake'?`<label title="Gebruik deze agent" style="display:flex;align-items:center;cursor:pointer;margin-left:4px">
+        <input type="checkbox" data-agent="${a.id}" ${activeAgents.has(a.id)?'checked':''} onchange="toggleAgent('${a.id}',this.checked)"
+          style="width:14px;height:14px;accent-color:var(--g);cursor:pointer">
+      </label>`:''}
     </div>`).join('');
 }
 function setDot(id,s){ const d=document.getElementById('dot-'+id); if(d) d.className='adot '+s; }
+
+// ── Agent selector ──
+let activeAgents = new Set(['bronnen','researcher','writer','reviewer','humanizer']);
+function toggleAgent(id, on) {
+  if(on) activeAgents.add(id); else activeAgents.delete(id);
+  // Altijd minstens writer aan
+  if(!activeAgents.has('writer')) { activeAgents.add('writer'); renderSidebar(); }
+}
 
 // ═══════════ TABS ═══════════
 function setupTabs(){
@@ -1313,6 +1275,7 @@ function setupTabs(){
 function switchTab(n){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===n));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+n));
+  if(n==='archief') loadArchief();
 }
 function goConfig(i){ switchTab('config'); setTimeout(()=>{ const el=document.getElementById('cfg-'+agents[i].id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },60); }
 
@@ -1456,24 +1419,29 @@ async function launchAgents(extraInstructions){
 
   try{
     // 1. Bronnen Agent
-    setStep('bronnen','thinking','Bronnen zoeken bij overheidswebsites...');
-    setDot('bronnen','thinking');
-    const bronnen=await apiCall(agents[1].systemPrompt+extra, [{role:'user',content:iBase}]);
-    OUT.bronnen=bronnen;
-    setStep('bronnen','done',bronnen);
-    setDot('bronnen','done');
-    // Render sources visually
-    renderSources(bronnen);
+    let bronnen = '';
+    if(activeAgents.has('bronnen')) {
+      setStep('bronnen','thinking','Bronnen zoeken bij overheidswebsites...');
+      setDot('bronnen','thinking');
+      bronnen=await apiCall(agents[1].systemPrompt+extra, [{role:'user',content:iBase}]);
+      OUT.bronnen=bronnen;
+      setStep('bronnen','done',bronnen);
+      setDot('bronnen','done');
+      renderSources(bronnen);
+    } else { setStep('bronnen','idle','Overgeslagen'); }
 
     // 2. Researcher
-    setStep('researcher','thinking','Strategie bepalen...');
-    setDot('researcher','thinking');
-    const research=await apiCall(agents[2].systemPrompt+extra, [{role:'user',content:`${iBase}\n\nGevonden bronnen:\n${bronnen}`}]);
-    OUT.research=research;
-    setStep('researcher','done',research);
-    setDot('researcher','done');
+    let research = '';
+    if(activeAgents.has('researcher')) {
+      setStep('researcher','thinking','Strategie bepalen...');
+      setDot('researcher','thinking');
+      research=await apiCall(agents[2].systemPrompt+extra, [{role:'user',content:`${iBase}${bronnen?'\n\nGevonden bronnen:\n'+bronnen:''}`}]);
+      OUT.research=research;
+      setStep('researcher','done',research);
+      setDot('researcher','done');
+    } else { setStep('researcher','idle','Overgeslagen'); }
 
-    // 3. Writer — max_tokens schalen op woordenaantal (1 token ≈ 0.75 woord, plus overhead)
+    // 3. Writer
     setStep('writer','thinking','Artikel schrijven...');
     setDot('writer','thinking');
     const wSys=agents[3].systemPrompt
@@ -1481,31 +1449,43 @@ async function launchAgents(extraInstructions){
       .replace('{wordcount}', wordCount)
       + extra;
     const writerMaxT = 20000;
-    const draft=await apiCall(wSys, [{role:'user',content:`${iBase}\n\nBronnen:\n${bronnen}\n\nStrategische briefing:\n${research}`}], writerMaxT);
+    const ctx=[iBase, bronnen?'Bronnen:\n'+bronnen:'', research?'Strategische briefing:\n'+research:''].filter(Boolean).join('\n\n');
+    const draft=await apiCall(wSys, [{role:'user',content:ctx}], writerMaxT);
     OUT.draft=draft;
     setStep('writer','done',draft);
     setDot('writer','done');
 
-    // 4. Reviewer — ook schalen
-    setStep('reviewer','thinking','Reviewen...');
-    setDot('reviewer','thinking');
-    const reviewerMaxT = 20000;
-    const review=await apiCall(agents[4].systemPrompt+extra, [{role:'user',content:`${iBase}\n\nConcept artikel:\n${draft}`}], reviewerMaxT);
-    OUT.review=review;
-    setStep('reviewer','done',review);
-    setDot('reviewer','done');
-    const marker='===ARTIKEL===';
-    const idx=review.indexOf(marker);
-    OUT.reviewed=idx!==-1?review.substring(idx+marker.length).trim():draft;
+    // 4. Reviewer
+    let reviewed = draft;
+    if(activeAgents.has('reviewer')) {
+      setStep('reviewer','thinking','Reviewen...');
+      setDot('reviewer','thinking');
+      const reviewerMaxT = 20000;
+      const review=await apiCall(agents[4].systemPrompt+extra, [{role:'user',content:`${iBase}\n\nConcept artikel:\n${draft}`}], reviewerMaxT);
+      OUT.review=review;
+      setStep('reviewer','done',review);
+      setDot('reviewer','done');
+      const marker='===ARTIKEL===';
+      const idx=review.indexOf(marker);
+      reviewed=idx!==-1?review.substring(idx+marker.length).trim():draft;
+    } else { setStep('reviewer','idle','Overgeslagen'); }
+    OUT.reviewed=reviewed;
 
-    // 5. Humanizer — ook schalen op woordenaantal
-    setStep('humanizer','thinking','AI-schrijfpatronen verwijderen...');
-    setDot('humanizer','thinking');
-    const humanizerMaxT = 20000;
-    const human=await apiCall(agents[5].systemPrompt, [{role:'user',content:`Herschrijf dit artikel:\n\n${OUT.reviewed}`}], humanizerMaxT);
-    OUT.final=human;
-    setStep('humanizer','done',human);
-    setDot('humanizer','done');
+    // 5. Humanizer
+    let final = reviewed;
+    if(activeAgents.has('humanizer')) {
+      setStep('humanizer','thinking','AI-schrijfpatronen verwijderen...');
+      setDot('humanizer','thinking');
+      const humanizerMaxT = 20000;
+      final=await apiCall(agents[5].systemPrompt, [{role:'user',content:`Herschrijf dit artikel:\n\n${reviewed}`}], humanizerMaxT);
+      setStep('humanizer','done',final);
+      setDot('humanizer','done');
+    } else { setStep('humanizer','idle','Overgeslagen'); }
+    OUT.final=final;
+
+    // ── Auto-save naar Supabase ──
+    const onderwerp = iSum ? iSum.split('.')[0].trim().substring(0,120) : 'Handmatig artikel';
+    await SB.saveArtikel(currentSite, onderwerp, 'handmatig', final);
 
     renderArticle(OUT.final);
     document.getElementById('fstat').textContent='✓ Klaar!';
@@ -1775,22 +1755,39 @@ function renderArticle(html){
 function copyArt(){ navigator.clipboard.writeText(document.getElementById('acontent').innerText).then(()=>alert('Gekopieerd!')); }
 
 // ── DOWNLOAD HTML ──
+function getArtikelHTML() {
+  // Gebruik articleHtml als beschikbaar, anders final
+  return OUT.articleHtml || OUT.final || '';
+}
+
+function getArtikelTitel() {
+  const html = getArtikelHTML();
+  return html.match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1]?.trim() || 'artikel-impactvandaag';
+}
+
+// ── DOWNLOAD HTML ──
 function dlHTML(){
-  const title = (OUT.articleHtml||'').match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1] || 'artikel';
+  const title = getArtikelTitel();
+  const html = getArtikelHTML();
+  if(!html){ alert('Geen artikel beschikbaar om te downloaden.'); return; }
   const full = `<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>${title}</title>
 <style>body{font-family:Georgia,serif;max-width:700px;margin:2rem auto;line-height:1.8;color:#1c1c1a;}
 h1{font-size:28px;margin-bottom:.5rem;}h2{font-size:20px;margin:1.5rem 0 .5rem;}
-p{margin-bottom:1rem;}</style></head><body>${OUT.articleHtml||''}</body></html>`;
+p{margin-bottom:1rem;}</style></head><body>${html}</body></html>`;
   const blob = new Blob([full],{type:'text/html;charset=utf-8'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = slug(title)+'.html';
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
 }
 
-// ── DOWNLOAD WORD (.docx via HTML) ──
+// ── DOWNLOAD WORD ──
 function dlWord(){
-  const title = (OUT.articleHtml||'').match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1] || 'artikel';
+  const title = getArtikelTitel();
+  const html = getArtikelHTML();
+  if(!html){ alert('Geen artikel beschikbaar om te downloaden.'); return; }
   const body = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
     xmlns:w="urn:schemas-microsoft-com:office:word"
     xmlns="http://www.w3.org/TR/REC-html40">
@@ -1801,18 +1798,23 @@ function dlWord(){
     h2{font-size:14pt;font-weight:bold;margin-top:12pt;margin-bottom:4pt;}
     p{margin-bottom:8pt;}
   </style></head>
-  <body>${OUT.articleHtml||''}</body></html>`;
+  <body>${html}</body></html>`;
   const blob = new Blob(['\ufeff'+body],{type:'application/msword;charset=utf-8'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = slug(title)+'.doc';
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
 }
 
 // ── DOWNLOAD PDF (via browser print) ──
 function dlPDF(){
-  const title = (OUT.articleHtml||'').match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1] || 'ImpactVandaag Artikel';
+  const title = getArtikelTitel();
+  const html = getArtikelHTML();
+  if(!html){ alert('Geen artikel beschikbaar om te downloaden.'); return; }
   const w = window.open('','_blank');
+  if(!w){ alert('Sta pop-ups toe voor PDF download.'); return; }
   w.document.write(`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>${title}</title>
 <style>
   @media print { @page{margin:2cm;} }
@@ -1823,10 +1825,10 @@ function dlPDF(){
   .meta{font-size:9pt;color:#888;margin-bottom:1.5rem;border-bottom:1px solid #ddd;padding-bottom:.5rem;}
 </style></head><body>
 <div class="meta">impactvandaag.nl — ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}</div>
-${OUT.articleHtml||''}
+${html}
 </body></html>`);
   w.document.close();
-  setTimeout(()=>{ w.focus(); w.print(); },500);
+  setTimeout(()=>{ w.focus(); w.print(); },600);
 }
 
 // ── MAIL NAAR JAN ──
@@ -2339,6 +2341,64 @@ async function startDagelijkseRun(){
 
   dagRunning = false;
   btn.disabled = false; btn.textContent = '▶ Start dagelijkse run';
+}
+
+// ═══════════ ARCHIEF ═══════════
+let archiefData = [];
+
+async function loadArchief() {
+  document.getElementById('arch-list').innerHTML = '<div class="arch-empty">Laden...</div>';
+  // Load from both sites
+  const iv = await SB.getArtikelen('iv');
+  const oo = await SB.getArtikelen('oo');
+  archiefData = [...iv, ...oo].sort((a,b) => new Date(b.date) - new Date(a.date));
+  renderArchief();
+}
+
+function renderArchief() {
+  const filterSite = document.getElementById('arch-filter-site')?.value || 'all';
+  const filterType = document.getElementById('arch-filter-type')?.value || 'all';
+  const list = document.getElementById('arch-list');
+
+  let items = archiefData;
+  if(filterSite !== 'all') items = items.filter(i => i.site === filterSite || !i.site);
+  if(filterType !== 'all') items = items.filter(i => i.type === filterType);
+
+  if(!items.length) {
+    list.innerHTML = '<div class="arch-empty">Geen artikelen gevonden.</div>';
+    return;
+  }
+
+  list.innerHTML = items.map((item, idx) => {
+    const siteLabel = item.site === 'oo' ? 'OpdrachtOverheid' : 'ImpactVandaag';
+    const type = item.type || 'handmatig';
+    const preview = (item.artikel || '').replace(/<[^>]+>/g,'').substring(0,140) + '...';
+    const datum = item.date ? new Date(item.date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    return `
+      <div class="arch-item" onclick="openArchiefItem(${idx})">
+        <div class="arch-item-head">
+          <div class="arch-item-title">${item.onderwerp || 'Zonder titel'}</div>
+          <span class="arch-type ${type}">${type}</span>
+          <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--sand);color:var(--mut);border:1px solid var(--bdr)">${siteLabel}</span>
+        </div>
+        <div class="arch-item-meta">${datum}</div>
+        <div class="arch-item-preview">${preview}</div>
+      </div>`;
+  }).join('');
+}
+
+function openArchiefItem(idx) {
+  const items = archiefData;
+  const filterSite = document.getElementById('arch-filter-site')?.value || 'all';
+  const filterType = document.getElementById('arch-filter-type')?.value || 'all';
+  let filtered = items;
+  if(filterSite !== 'all') filtered = filtered.filter(i => i.site === filterSite || !i.site);
+  if(filterType !== 'all') filtered = filtered.filter(i => i.type === filterType);
+  const item = filtered[idx];
+  if(!item) return;
+  OUT.final = item.artikel;
+  OUT.articleHtml = item.artikel;
+  renderArticle(item.artikel);
 }
 
 // ═══════════ STARTUP ═══════════
