@@ -23,4 +23,4 @@ Open `index.html` in je browser, of bezoek de live versie via GitHub Pages.
 
 ## Setup
 
-Gebouwd met de Anthropic Claude API.
+Gebouwd met de Anthropic Claude API. Standaardmodel is **Claude Fable 5** (het slimste Claude-model), met automatische fallback naar Claude Opus 4.8. Google Gemini wordt ook ondersteund via dezelfde Cloudflare Worker.
